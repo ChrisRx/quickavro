@@ -1,6 +1,6 @@
 # quickavro
 
-quickavro is a library for working with the [Avro](https://avro.apache.org) file format. The purpose of this library is to provide a high-performance interface in Python for reading/writing Avro files.  The performance of Avro has been historically very poor in Python, so pyavro will make use of a Python C extension that directly interacts with the Avro C API.
+quickavro is a library for working with the [Avro](https://avro.apache.org) file format. The purpose of this library is to provide a high-performance interface in Python for reading/writing Avro files.  The performance of Avro has been historically very poor in Python, so quickavro will make use of a Python C extension that directly interacts with the Avro C API.
 
 # Install
 
