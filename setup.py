@@ -154,11 +154,16 @@ def compile_vendor_static(static_build_dir, static_lib_name):
     )
 
     c.create_static_lib(objs, static_lib_name, output_dir=static_build_dir)
-    print(dir(c))
 
 def compile_ext(static_lib):
     include_dirs = [
         os.path.join(os.getcwd(), "src"),
+        'vendor/zlib',
+        'vendor/snappy',
+        'vendor/jansson',
+        'vendor/jansson/src',
+        'vendor/avro/lang/c/src',
+        'vendor/avro/lang/c/src/avro'
     ]
     libraries = []
     library_dirs = []
