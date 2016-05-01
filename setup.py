@@ -19,12 +19,35 @@ def get_version():
 def compile_vendor_static(static_build_dir, static_lib_name):
     c = new_compiler()
     include_dirs = [ 
+        'vendor/zlib',
+        'vendor/snappy',
         'vendor/jansson',
         'vendor/jansson/src',
         'vendor/avro/lang/c/src',
         'vendor/avro/lang/c/src/avro'
     ]   
     sources = [ 
+        'vendor/zlib/adler32.c',
+        'vendor/zlib/compress.c',
+        'vendor/zlib/crc32.c',
+        'vendor/zlib/deflate.c',
+        'vendor/zlib/gzclose.c',
+        'vendor/zlib/gzlib.c',
+        'vendor/zlib/gzread.c',
+        'vendor/zlib/gzwrite.c',
+        'vendor/zlib/infback.c',
+        'vendor/zlib/inffast.c',
+        'vendor/zlib/inflate.c',
+        'vendor/zlib/inftrees.c',
+        'vendor/zlib/trees.c',
+        'vendor/zlib/uncompr.c',
+        'vendor/zlib/zutil.c',
+        'vendor/snappy/snappy-c.cc',
+        'vendor/snappy/snappy-sinksource.cc',
+        'vendor/snappy/snappy-stubs-internal.cc',
+        # 'vendor/snappy/snappy-test.cc',
+        'vendor/snappy/snappy.cc',
+        # 'vendor/snappy/snappy_unittest.cc',
         'vendor/jansson/src/dump.c',
         'vendor/jansson/src/error.c',
         'vendor/jansson/src/hashtable.c',
@@ -73,6 +96,24 @@ def compile_vendor_static(static_build_dir, static_lib_name):
         'vendor/avro/lang/c/src/wrapped-buffer.c',
     ]
     depends = [
+        'vendor/zlib/crc32.h',
+        'vendor/zlib/deflate.h',
+        'vendor/zlib/gzguts.h',
+        'vendor/zlib/inffast.h',
+        'vendor/zlib/inffixed.h',
+        'vendor/zlib/inflate.h',
+        'vendor/zlib/inftrees.h',
+        'vendor/zlib/trees.h',
+        'vendor/zlib/zconf.h',
+        'vendor/zlib/zlib.h',
+        'vendor/zlib/zutil.h',
+        'vendor/snappy/snappy-c.h',
+        'vendor/snappy/snappy-internal.h',
+        'vendor/snappy/snappy-sinksource.h',
+        'vendor/snappy/snappy-stubs-internal.h',
+        'vendor/snappy/snappy-stubs-public.h',
+        'vendor/snappy/snappy-test.h',
+        'vendor/snappy/snappy.h',
         'vendor/jansson/src/hashtable.h',
         'vendor/jansson/src/jansson.h',
         'vendor/jansson/src/jansson_private.h',
@@ -119,11 +160,7 @@ def compile_ext(static_lib):
     include_dirs = [
         os.path.join(os.getcwd(), "src"),
     ]
-    libraries = [
-        'avro',
-        'jansson',
-        'z',
-    ]
+    libraries = []
     library_dirs = []
     sources = [
         "src/convert.c",
