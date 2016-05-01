@@ -19,27 +19,48 @@
 #include "compat.h"
 
 
+PyObject* array_to_pylist(avro_value_t* value) {
+    size_t record_length;
+    int i;
+    avro_value_get_size(value, &record_length);
+    PyObject* l = PyList_New(record_length);
+    for (i=0; i<record_length; i++) {
+        avro_value_t field_value;
+        avro_value_get_by_index(value, i, &field_value, NULL);
+        PyList_SetItem(l, i, avro_to_python(&field_value));
+    }
+    return l;
+}
+
 PyObject* avro_to_python(avro_value_t* value) {
     avro_type_t value_type = avro_value_get_type(value);
     switch (value_type) {
         case AVRO_STRING:
             return string_to_pystring(value);
         case AVRO_BYTES:
+            return bytes_to_pybytes(value);
         case AVRO_INT32:
             return int32_to_pylong(value);
         case AVRO_INT64:
             return int64_to_pylong(value);
         case AVRO_FLOAT:
+            return float_to_pyfloat(value);
         case AVRO_DOUBLE:
+            return double_to_pyfloat(value);
         case AVRO_BOOLEAN:
+            return boolean_to_pybool(value);
         case AVRO_NULL:
-            Py_RETURN_NONE;
+            return null_to_pynone(value);
         case AVRO_RECORD:
-            return record_to_python(value);
+            return map_to_pydict(value);
         case AVRO_ENUM:
+            return enum_to_pystring(value);
         case AVRO_FIXED:
+            return fixed_to_pystring(value);
         case AVRO_MAP:
+            return map_to_pydict(value);
         case AVRO_ARRAY:
+            return array_to_pylist(value);
         case AVRO_UNION:
             return union_to_python(value);
         case AVRO_LINK:
@@ -47,6 +68,50 @@ PyObject* avro_to_python(avro_value_t* value) {
             fprintf(stderr, "Unhandled Type: %d\n", value_type);
     }
     Py_RETURN_NONE;
+}
+
+PyObject* boolean_to_pybool(avro_value_t* value) {
+    int t;
+    avro_value_get_boolean(value, &t);
+    return PyBool_FromLong(t);
+}
+
+PyObject* bytes_to_pybytes(avro_value_t* value) {
+    unsigned char* buf;
+    size_t length;
+    avro_value_get_bytes(value, &buf, &length);
+    return PyBytes_FromStringAndSize((char*)buf, length);
+}
+
+PyObject* double_to_pyfloat(avro_value_t* value) {
+    double d;
+    avro_value_get_double(value, &d);
+    return PyFloat_FromDouble(d);
+}
+
+PyObject* enum_to_pystring(avro_value_t* value) {
+    int index;
+    avro_value_get_enum(value, &index);
+    avro_schema_t schema = avro_value_get_schema(value);
+    char* name = avro_schema_enum_get(schema, index);
+    if (name == NULL) {
+        fprintf(stderr, "Enum to pystring failed.\n");
+        Py_RETURN_NONE;
+    }
+    return PyUnicode_FromString(name);
+}
+
+PyObject* fixed_to_pystring(avro_value_t* value) {
+    unsigned char* buf;
+    size_t length;
+    avro_value_get_fixed(value, &buf, &length);
+    return PyBytes_FromStringAndSize((char*)buf, length);
+}
+
+PyObject* float_to_pyfloat(avro_value_t* value) {
+    float f;
+    avro_value_get_float(value, &f);
+    return PyFloat_FromDouble(f);
 }
 
 PyObject* int32_to_pylong(avro_value_t* value) {
@@ -61,18 +126,23 @@ PyObject* int64_to_pylong(avro_value_t* value) {
     return PyLong_FromLong(q);
 }
 
-PyObject* record_to_python(avro_value_t* value) {
+PyObject* map_to_pydict(avro_value_t* value) {
     size_t record_length;
     int i;
-    avro_schema_t schema = avro_value_get_schema(value);
+    PyObject* d = PyDict_New();
     avro_value_get_size(value, &record_length);
-    PyObject* l = PyList_New(record_length);
     for (i=0; i<record_length; i++) {
+        const char* field_name;
         avro_value_t field_value;
-        avro_value_get_by_index(value, i, &field_value, NULL);
-        PyList_SetItem(l, i, avro_to_python(&field_value));
+        avro_value_get_by_index(value, i, &field_value, &field_name);
+        PyDict_SetItemString(d, field_name, avro_to_python(&field_value));
     }
-    return l;
+    return d;
+}
+
+PyObject* null_to_pynone(avro_value_t* value) {
+    avro_value_get_null(value);
+    Py_RETURN_NONE;
 }
 
 PyObject* string_to_pystring(avro_value_t* value) {

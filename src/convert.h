@@ -25,10 +25,18 @@ extern "C" {
 #include <avro.h>
 
 
+PyObject* array_to_pylist(avro_value_t* value);
 PyObject* avro_to_python(avro_value_t* value);
+PyObject* boolean_to_pybool(avro_value_t* value);
+PyObject* bytes_to_pybytes(avro_value_t* value);
+PyObject* double_to_pyfloat(avro_value_t* value);
+PyObject* enum_to_pystring(avro_value_t* value);
+PyObject* fixed_to_pystring(avro_value_t* value);
+PyObject* float_to_pyfloat(avro_value_t* value);
 PyObject* int32_to_pylong(avro_value_t* value);
 PyObject* int64_to_pylong(avro_value_t* value);
-PyObject* record_to_python(avro_value_t* value);
+PyObject* map_to_pydict(avro_value_t* value);
+PyObject* null_to_pynone(avro_value_t* value);
 PyObject* string_to_pystring(avro_value_t* value);
 PyObject* union_to_python(avro_value_t *value);
 

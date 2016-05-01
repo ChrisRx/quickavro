@@ -37,7 +37,7 @@ def main():
     records = r.read(example_schema, records)
     print("# of records: {0}".format(len(records)))
     for record in records:
-        print(", ".join([str(field) for field in record]))
+        print("name: {name}, age: {age}".format(**record))
 
 
 if __name__ == '__main__':
