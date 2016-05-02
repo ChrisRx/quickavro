@@ -25,6 +25,7 @@ extern "C" {
 #include <avro.h>
 
 
+int avro_error(int rval);
 PyObject* array_to_pylist(avro_value_t* value);
 PyObject* avro_to_python(avro_value_t* value);
 PyObject* boolean_to_pybool(avro_value_t* value);
@@ -37,6 +38,19 @@ PyObject* int32_to_pylong(avro_value_t* value);
 PyObject* int64_to_pylong(avro_value_t* value);
 PyObject* map_to_pydict(avro_value_t* value);
 PyObject* null_to_pynone(avro_value_t* value);
+int pybool_to_boolean(PyObject* obj, avro_value_t* value);
+int pybytes_to_bytes(PyObject* obj, avro_value_t* value);
+int pydict_to_map(PyObject* obj, avro_value_t* value);
+int pyfloat_to_double(PyObject* obj, avro_value_t* value);
+int pyfloat_to_float(PyObject* obj, avro_value_t* value);
+int pylist_to_array(PyObject* obj, avro_value_t* value);
+int pylong_to_int32(PyObject* obj, avro_value_t* value);
+int pylong_to_int64(PyObject* obj, avro_value_t* value);
+int pynone_to_null(PyObject* obj, avro_value_t* value);
+int pystring_to_enum(PyObject* obj, avro_value_t* value);
+int pystring_to_fixed(PyObject* obj, avro_value_t* value);
+int pystring_to_string(PyObject* obj, avro_value_t* value);
+int python_to_union(PyObject* obj, avro_value_t* value);
 PyObject* string_to_pystring(avro_value_t* value);
 PyObject* union_to_python(avro_value_t *value);
 

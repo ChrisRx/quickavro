@@ -41,13 +41,15 @@ static int Reader_init(Reader* self, PyObject* args, PyObject* kwds) {
 
 static PyObject* Reader_read(PyObject* self, PyObject* args) {
     Py_buffer buffer;
-    PyObject* json_str;
+    char* json_str;
+    int rval;
 
     if (!PyArg_ParseTuple(args, "ss*", &json_str, &buffer)) {
         Py_RETURN_NONE;
     }
-    avro_schema_t schema;
-    int r = avro_schema_from_json(json_str, 0, &schema, NULL);
+    avro_schema_t schema = NULL;
+    avro_schema_error_t error;
+    int r = avro_schema_from_json(json_str, 0, &schema, &error);
     if (r != 0 || schema == NULL) {
         printf("Oh no, schema no work\n");
         Py_RETURN_NONE;
@@ -57,7 +59,6 @@ static PyObject* Reader_read(PyObject* self, PyObject* args) {
     avro_value_t value;
     avro_reader_memory_set_source(reader, buffer.buf, buffer.len);
     avro_generic_value_new(iface, &value);
-    int rval;
     PyObject* values = PyList_New(0);
     while ((rval = avro_value_read(reader, &value)) == 0) {
         PyList_Append(values, avro_to_python(&value));
