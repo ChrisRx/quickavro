@@ -14,37 +14,21 @@
  * limitations under the License.
  */
 
-#ifndef __CONVERT_H
-#define __CONVERT_H
+#ifndef __WRITEROBJECT_H
+#define __WRITEROBJECT_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <Python.h>
-#include <avro.h>
 
-
-#define tabledef_size(x) (sizeof(x)/sizeof((x)[0]))
 
 typedef struct {
-    const char* python_type;
-    const char* avro_type;
-} tabledef;
+    PyObject_HEAD
+} Writer;
 
-static const tabledef p2a[] = {
-    {"int", "int"},
-    {"long", "long"},
-    {"str", "string"},
-    {"unicode", "string"},
-    {"NoneType", "null"},
-    {"bool", "boolean"},
-    {NULL}
-};
-
-int avro_error(int rval);
-int python_to_avro(PyObject* obj, avro_value_t* value);
-PyObject* avro_to_python(avro_value_t* value);
+extern PyTypeObject WriterType;
 
 #ifdef __cplusplus
 }

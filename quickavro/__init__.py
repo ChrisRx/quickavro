@@ -15,6 +15,7 @@ __title__ = 'quickavro'
 __version__ = '0.1.0'
 __authors__ = ['Chris Marshall']
 __license__ = 'Apache 2.0'
-__all__ = ['Reader']
+__all__ = ['Reader', 'Writer']
 
 from .reader import Reader
+from .writer import Writer

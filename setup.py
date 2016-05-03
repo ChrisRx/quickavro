@@ -170,12 +170,14 @@ def compile_ext(static_lib):
     sources = [
         "src/convert.c",
         "src/readerobject.c",
+        "src/writerobject.c",
         "src/module.c",
     ]
     depends = [
         "src/compat.h",
         "src/convert.h",
         "src/readerobject.h",
+        "src/writerobject.h",
     ]
     extra_compile_args = ['-Wfatal-errors']
     linker_flags = ['-shared', '-Wl,--export-dynamic']

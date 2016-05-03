@@ -18,6 +18,7 @@
 #include "compat.h"
 
 #include "readerobject.h"
+#include "writerobject.h"
 
 
 #ifdef __cplusplus
@@ -37,6 +38,10 @@ MOD_INIT(_quickavro)
         return MOD_ERROR_VAL;
     }
 
+    if (PyType_Ready(&WriterType) < 0) {
+        return MOD_ERROR_VAL;
+    }
+
     MOD_DEF(m, "_quickavro", "", module_methods);
 
     if (m == NULL) {
@@ -45,6 +50,9 @@ MOD_INIT(_quickavro)
 
     Py_INCREF(&ReaderType);
     PyModule_AddObject(m, "Reader", (PyObject*)&ReaderType);
+
+    Py_INCREF(&WriterType);
+    PyModule_AddObject(m, "Writer", (PyObject*)&WriterType);
 
     return MOD_SUCCESS_VAL(m);
 }

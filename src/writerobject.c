@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-#include "readerobject.h"
+#include "writerobject.h"
 #include "compat.h"
 #include "convert.h"
 #include <avro.h>
 
 
-static void Reader_dealloc(Reader* self) {
+static void Writer_dealloc(Writer* self) {
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-static PyObject* Reader_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
-    Reader* self;
+static PyObject* Writer_new(PyTypeObject* type, PyObject* args, PyObject* kwds) {
+    Writer* self;
 
-    self = (Reader*)type->tp_alloc(type, 0);
+    self = (Writer*)type->tp_alloc(type, 0);
     return (PyObject*)self;
 }
 
-static int Reader_init(Reader* self, PyObject* args, PyObject* kwds) {
+static int Writer_init(Writer* self, PyObject* args, PyObject* kwds) {
     return 0;
 }
 
-static PyObject* Reader_read(PyObject* self, PyObject* args) {
-    Py_buffer buffer;
+static PyObject* Writer_write(PyObject* self, PyObject* args) {
+    PyObject* obj;
     char* json_str;
     int rval;
 
-    if (!PyArg_ParseTuple(args, "ss*", &json_str, &buffer)) {
+    if (!PyArg_ParseTuple(args, "sO", &json_str, &obj)) {
         Py_RETURN_NONE;
     }
     avro_schema_t schema = NULL;
@@ -51,33 +51,50 @@ static PyObject* Reader_read(PyObject* self, PyObject* args) {
         Py_RETURN_NONE;
     }
     avro_value_iface_t* iface = avro_generic_class_from_schema(schema);
-    avro_reader_t reader = avro_reader_memory(NULL, 0);
+    size_t buffer_length = 1024;
+    size_t new_size;
+    char* buffer = (char*)avro_malloc(buffer_length);
+    avro_writer_t writer = avro_writer_memory(buffer, buffer_length);
     avro_value_t value;
-    avro_reader_memory_set_source(reader, buffer.buf, buffer.len);
     avro_generic_value_new(iface, &value);
-    PyObject* values = PyList_New(0);
-    while ((rval = avro_value_read(reader, &value)) == 0) {
-        PyList_Append(values, avro_to_python(&value));
-        avro_value_reset(&value);
+    rval = python_to_avro(obj, &value);
+    if (rval == 0) {
+        rval = avro_value_write(writer, &value);
     }
+
+    while (rval == ENOSPC) {
+        new_size = buffer_length * 2;
+        buffer = (char*)avro_realloc(buffer, buffer_length, new_size);
+        if (buffer) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        buffer_length = new_size;
+        avro_writer_memory_set_dest(writer, buffer, buffer_length);
+        rval = avro_value_write(writer, &value);
+    }
+
+    if (rval) {
+        avro_value_decref(&value);
+        Py_RETURN_NONE;
+    }
+    PyObject* s = PyBytes_FromStringAndSize(buffer, avro_writer_tell(writer));
+    avro_writer_reset(writer);
     avro_value_decref(&value);
-    avro_value_iface_decref(iface);
-    avro_schema_decref(schema);
-    PyBuffer_Release(&buffer);
-    return values;
+    return s;
 }
 
-static PyMethodDef Reader_methods[] = {
-    {"read", (PyCFunction)Reader_read, METH_VARARGS, ""},
+static PyMethodDef Writer_methods[] = {
+    {"write", (PyCFunction)Writer_write, METH_VARARGS, ""},
     {NULL}  /* Sentinel */
 };
 
-PyTypeObject ReaderType = {
+PyTypeObject WriterType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "_quickavro.Reader",                            /* tp_name */
-    sizeof(Reader),                                 /* tp_basicsize */
+    "_quickavro.Writer",                            /* tp_name */
+    sizeof(Writer),                                 /* tp_basicsize */
     0,                                              /* tp_itemsize */
-    (destructor)Reader_dealloc,                     /* tp_dealloc */
+    (destructor)Writer_dealloc,                     /* tp_dealloc */
     0,                                              /* tp_print */
     0,                                              /* tp_getattr */
     0,                                              /* tp_setattr */
@@ -93,14 +110,14 @@ PyTypeObject ReaderType = {
     0,                                              /* tp_setattro */
     0,                                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,       /* tp_flags */
-    "Reader objects",                               /* tp_doc */
+    "Writer objects",                               /* tp_doc */
     0,                                              /* tp_traverse */
     0,                                              /* tp_clear */
     0,                                              /* tp_richcompare */
     0,                                              /* tp_weaklistoffset */
     0,                                              /* tp_iter */
     0,                                              /* tp_iternext */
-    Reader_methods,                                 /* tp_methods */
+    Writer_methods,                                 /* tp_methods */
     0,                                              /* tp_members */
     0,                                              /* tp_getset */
     0,                                              /* tp_base */
@@ -108,7 +125,7 @@ PyTypeObject ReaderType = {
     0,                                              /* tp_descr_get */
     0,                                              /* tp_descr_set */
     0,                                              /* tp_dictoffset */
-    (initproc)Reader_init,                          /* tp_init */
+    (initproc)Writer_init,                          /* tp_init */
     0,                                              /* tp_alloc */
-    Reader_new,                                     /* tp_new */
+    Writer_new,                                     /* tp_new */
 };

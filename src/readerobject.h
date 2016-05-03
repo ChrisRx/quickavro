@@ -24,6 +24,10 @@ extern "C" {
 #include <Python.h>
 
 
+typedef struct {
+    PyObject_HEAD
+} Reader;
+
 extern PyTypeObject ReaderType;
 
 #ifdef __cplusplus
