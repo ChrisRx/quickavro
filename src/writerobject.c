@@ -19,6 +19,7 @@
 #include "convert.h"
 #include <avro.h>
 
+#define INITIAL_BUFFER_SIZE 1024
 
 static void Writer_dealloc(Writer* self) {
     Py_TYPE(self)->tp_free((PyObject*)self);
@@ -32,54 +33,58 @@ static PyObject* Writer_new(PyTypeObject* type, PyObject* args, PyObject* kwds) 
 }
 
 static int Writer_init(Writer* self, PyObject* args, PyObject* kwds) {
-    return 0;
-}
-
-static PyObject* Writer_write(PyObject* self, PyObject* args) {
-    PyObject* obj;
     char* json_str;
-    int rval;
+    /*avro_schema_t schema = NULL;*/
+    avro_schema_error_t error;
 
-    if (!PyArg_ParseTuple(args, "sO", &json_str, &obj)) {
+    if (!PyArg_ParseTuple(args, "s", &json_str)) {
         Py_RETURN_NONE;
     }
-    avro_schema_t schema = NULL;
-    avro_schema_error_t error;
-    int r = avro_schema_from_json(json_str, 0, &schema, &error);
-    if (r != 0 || schema == NULL) {
+    int r = avro_schema_from_json(json_str, 0, &self->schema, &error);
+    if (r != 0 || self->schema == NULL) {
         printf("Oh no, schema no work\n");
         Py_RETURN_NONE;
     }
-    avro_value_iface_t* iface = avro_generic_class_from_schema(schema);
-    size_t buffer_length = 1024;
-    size_t new_size;
-    char* buffer = (char*)avro_malloc(buffer_length);
-    avro_writer_t writer = avro_writer_memory(buffer, buffer_length);
+    self->iface = avro_generic_class_from_schema(self->schema);
+    self->buffer = (char*)avro_malloc(INITIAL_BUFFER_SIZE);
+    self->buffer_length = INITIAL_BUFFER_SIZE;
+    self->writer = avro_writer_memory(self->buffer, self->buffer_length);
+    return 0;
+}
+
+static PyObject* Writer_write(Writer* self, PyObject* args) {
+    PyObject* obj;
+    int rval;
+
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        Py_RETURN_NONE;
+    }
     avro_value_t value;
-    avro_generic_value_new(iface, &value);
+    avro_generic_value_new(self->iface, &value);
     rval = python_to_avro(obj, &value);
     if (rval == 0) {
-        rval = avro_value_write(writer, &value);
+        rval = avro_value_write(self->writer, &value);
     }
+    size_t new_size;
 
     while (rval == ENOSPC) {
-        new_size = buffer_length * 2;
-        buffer = (char*)avro_realloc(buffer, buffer_length, new_size);
-        if (buffer) {
+        new_size = self->buffer_length * 2;
+        self->buffer = (char*)avro_realloc(self->buffer, self->buffer_length, new_size);
+        if (self->buffer) {
             PyErr_NoMemory();
             return NULL;
         }
-        buffer_length = new_size;
-        avro_writer_memory_set_dest(writer, buffer, buffer_length);
-        rval = avro_value_write(writer, &value);
+        self->buffer_length = new_size;
+        avro_writer_memory_set_dest(self->writer, self->buffer, self->buffer_length);
+        rval = avro_value_write(self->writer, &value);
     }
 
     if (rval) {
         avro_value_decref(&value);
         Py_RETURN_NONE;
     }
-    PyObject* s = PyBytes_FromStringAndSize(buffer, avro_writer_tell(writer));
-    avro_writer_reset(writer);
+    PyObject* s = PyBytes_FromStringAndSize(self->buffer, avro_writer_tell(self->writer));
+    avro_writer_reset(self->writer);
     avro_value_decref(&value);
     return s;
 }

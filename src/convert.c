@@ -26,6 +26,17 @@ int avro_error(int rval) {
     return rval;
 }
 
+static const char* lookup(const char* key) {
+    size_t i;
+    int table_length = tabledef_size(p2a);
+    for (i=0; i<table_length; i++) {
+        if (strcmp(key, p2a[i].python_type) == 0) {
+            return p2a[i].avro_type;
+        }
+    }
+    return key;
+}
+
 static PyObject* array_to_pylist(avro_value_t* value) {
     size_t record_length;
     int i;
@@ -114,6 +125,31 @@ static PyObject* null_to_pynone(avro_value_t* value) {
     Py_RETURN_NONE;
 }
 
+static PyObject* string_to_pystring(avro_value_t* value) {
+    const char* buf;
+    size_t length;
+    avro_value_get_string(value, &buf, &length);
+    return PyUnicode_FromStringAndSize(buf, length-1);
+}
+
+static PyObject* union_to_python(avro_value_t *value) {
+    avro_value_t v;
+    avro_value_get_current_branch(value, &v);
+    return avro_to_python(&v);
+}
+
+static int pybool_to_boolean(PyObject* obj, avro_value_t* value) {
+    int t = PyObject_IsTrue(obj);
+    return avro_error(avro_value_set_boolean(value, t));
+}
+
+static int pybytes_to_bytes(PyObject* obj, avro_value_t* value) {
+    char* buf;
+    Py_ssize_t length;
+    PyBytes_AsStringAndSize(obj, &buf, &length);
+    return avro_error(avro_value_set_bytes(value, buf, length));
+}
+
 static int pydict_to_map(PyObject* obj, avro_value_t* dest) {
     PyObject *key, *value;
     Py_ssize_t pos = 0;
@@ -123,11 +159,83 @@ static int pydict_to_map(PyObject* obj, avro_value_t* dest) {
         avro_value_t v;
 
         const char* k = PyUnicode_AsUTF8(key);
+        const char* vv = PyUnicode_AsUTF8(value);
         rval = avro_value_add(dest, k, &v, NULL, NULL);
         if (rval == 0) {
             rval = python_to_avro(value, &v);
         }
     }
+    return rval;
+}
+
+static int pyfloat_to_double(PyObject* obj, avro_value_t* value) {
+    long l = PyFloat_AsDouble(obj);
+    return avro_error(avro_value_set_double(value, l));
+}
+
+static int pyfloat_to_float(PyObject* obj, avro_value_t* value) {
+    long l = PyFloat_AsDouble(obj);
+    return avro_error(avro_value_set_float(value, l));
+}
+
+static int pylist_to_array(PyObject* obj, avro_value_t* dest) {
+    int rval = 0;
+    Py_ssize_t i;
+    Py_ssize_t array_length = PySequence_Size(obj);
+    for (i=0; i<array_length; i++) {
+        PyObject* item = PySequence_GetItem(obj, i);
+        avro_value_t v;
+        avro_value_append(dest, &v, NULL);
+        rval = python_to_avro(item, &v);
+        Py_DECREF(item);
+        if (rval) {
+            return rval;
+        }
+    }
+    return 0;
+}
+
+static int pylong_to_int32(PyObject* obj, avro_value_t* value) {
+    long l = PyLong_AsLong(obj);
+    return avro_error(avro_value_set_int(value, l));
+}
+
+static int pylong_to_int64(PyObject* obj, avro_value_t* value) {
+    long long q = PyLong_AsLongLong(obj);
+    return avro_error(avro_value_set_long(value, q));
+}
+
+static int pynone_to_null(PyObject* obj, avro_value_t* value) {
+    return avro_error(avro_value_set_null(value));
+}
+
+static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
+    int index = PyLong_AsLong(obj);
+    return avro_error(avro_value_set_enum(value, index));
+}
+
+static int pystring_to_fixed(PyObject* obj, avro_value_t* value) {
+    if (PyUnicode_Check(obj)) {
+        obj = PyUnicode_AsUTF8String(obj);
+    }
+    char* buf;
+    Py_ssize_t length;
+    PyBytes_AsStringAndSize(obj, &buf, &length);
+    int rval = avro_error(avro_value_set_fixed(value, buf, length));
+    /*Py_DECREF(b);*/
+    return rval;
+}
+
+static int pystring_to_string(PyObject* obj, avro_value_t* value) {
+    // Switch to PyUnicode_AsUTF8AndSize and add macros for compat with
+    // Python versions before 3.3
+    if (PyUnicode_Check(obj)) {
+        obj = PyUnicode_AsUTF8String(obj);
+    }
+    char* buf;
+    Py_ssize_t length;
+    PyBytes_AsStringAndSize(obj, &buf, &length);
+    int rval = avro_error(avro_value_set_string_len(value, buf, length+1));
     return rval;
 }
 
@@ -154,49 +262,6 @@ static int python_to_record(PyObject* obj, avro_value_t* value) {
     return 0;
 }
 
-static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
-    int index = PyLong_AsLong(obj);
-    return avro_error(avro_value_set_enum(value, index));
-}
-
-static int pystring_to_fixed(PyObject* obj, avro_value_t* value) {
-    PyObject* b = PyUnicode_AsUTF8String(obj);
-    char* buf;
-    Py_ssize_t length;
-    PyBytes_AsStringAndSize(b, &buf, &length);
-    int rval = avro_error(avro_value_set_fixed(value, buf, length));
-    Py_DECREF(b);
-    return rval;
-}
-
-static int pylist_to_array(PyObject* obj, avro_value_t* dest) {
-    int rval = 0;
-    Py_ssize_t i;
-    Py_ssize_t array_length = PySequence_Size(obj);
-    for (i=0; i<array_length; i++) {
-        PyObject* item = PySequence_GetItem(obj, i);
-        avro_value_t v;
-        avro_value_append(dest, &v, NULL);
-        rval = python_to_avro(item, &v);
-        Py_DECREF(item);
-        if (rval) {
-            return rval;
-        }
-    }
-    return 0;
-}
-
-static const char* lookup(const char* key) {
-    size_t i;
-    int table_length = tabledef_size(p2a);
-    for (i=0; i<table_length; i++) {
-        if (strcmp(key, p2a[i].python_type) == 0) {
-            return p2a[i].avro_type;
-        }
-    }
-    return key;
-}
-
 static int python_to_union(PyObject* obj, avro_value_t* value) {
     // Probably not the most efficient way but handling unions this
     // way for now with a lookup table on PyTypeObject->tp_name
@@ -211,68 +276,6 @@ static int python_to_union(PyObject* obj, avro_value_t* value) {
     }
     avro_value_set_branch(value, branch_index, &branch);
     return python_to_avro(obj, &branch);
-}
-
-static int pybool_to_boolean(PyObject* obj, avro_value_t* value) {
-    int t = PyObject_IsTrue(obj);
-    return avro_error(avro_value_set_boolean(value, t));
-}
-
-static int pynone_to_null(PyObject* obj, avro_value_t* value) {
-    return avro_error(avro_value_set_null(value));
-}
-
-static int pyfloat_to_double(PyObject* obj, avro_value_t* value) {
-    long l = PyFloat_AsDouble(obj);
-    return avro_error(avro_value_set_double(value, l));
-}
-
-static int pyfloat_to_float(PyObject* obj, avro_value_t* value) {
-    long l = PyFloat_AsDouble(obj);
-    return avro_error(avro_value_set_float(value, l));
-}
-
-static int pylong_to_int32(PyObject* obj, avro_value_t* value) {
-    long l = PyLong_AsLong(obj);
-    return avro_error(avro_value_set_int(value, l));
-}
-
-static int pylong_to_int64(PyObject* obj, avro_value_t* value) {
-    long long q = PyLong_AsLongLong(obj);
-    return avro_error(avro_value_set_long(value, q));
-}
-
-static int pybytes_to_bytes(PyObject* obj, avro_value_t* value) {
-    char* buf;
-    Py_ssize_t length;
-    PyBytes_AsStringAndSize(obj, &buf, &length);
-    return avro_error(avro_value_set_bytes(value, buf, length+1));
-}
-
-static int pystring_to_string(PyObject* obj, avro_value_t* value) {
-    // Switch to PyUnicode_AsUTF8AndSize and add macros for compat with
-    // Python versions before 3.3
-    if (PyUnicode_Check(obj)) {
-        obj = PyUnicode_AsUTF8String(obj);
-    }
-    char* buf;
-    Py_ssize_t length;
-    PyBytes_AsStringAndSize(obj, &buf, &length);
-    int rval = avro_error(avro_value_set_string_len(value, buf, length+1));
-    return rval;
-}
-
-static PyObject* string_to_pystring(avro_value_t* value) {
-    const char* buf;
-    size_t length;
-    avro_value_get_string(value, &buf, &length);
-    return PyUnicode_FromStringAndSize(buf, length-1);
-}
-
-static PyObject* union_to_python(avro_value_t *value) {
-    avro_value_t v;
-    avro_value_get_current_branch(value, &v);
-    return avro_to_python(&v);
 }
 
 PyObject* avro_to_python(avro_value_t* value) {

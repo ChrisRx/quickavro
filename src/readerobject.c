@@ -21,6 +21,12 @@
 
 
 static void Reader_dealloc(Reader* self) {
+    if (self->schema) {
+        avro_schema_decref(self->schema);
+    }
+    if (self->iface) {
+        avro_value_iface_decref(self->iface);
+    }
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -32,37 +38,39 @@ static PyObject* Reader_new(PyTypeObject* type, PyObject* args, PyObject* kwds) 
 }
 
 static int Reader_init(Reader* self, PyObject* args, PyObject* kwds) {
-    return 0;
-}
-
-static PyObject* Reader_read(PyObject* self, PyObject* args) {
-    Py_buffer buffer;
     char* json_str;
-    int rval;
+    /*avro_schema_t schema = NULL;*/
+    avro_schema_error_t error;
 
-    if (!PyArg_ParseTuple(args, "ss*", &json_str, &buffer)) {
+    if (!PyArg_ParseTuple(args, "s", &json_str)) {
         Py_RETURN_NONE;
     }
-    avro_schema_t schema = NULL;
-    avro_schema_error_t error;
-    int r = avro_schema_from_json(json_str, 0, &schema, &error);
-    if (r != 0 || schema == NULL) {
+    int r = avro_schema_from_json(json_str, 0, &self->schema, &error);
+    if (r != 0 || self->schema == NULL) {
         printf("Oh no, schema no work\n");
         Py_RETURN_NONE;
     }
-    avro_value_iface_t* iface = avro_generic_class_from_schema(schema);
-    avro_reader_t reader = avro_reader_memory(NULL, 0);
+    self->iface = avro_generic_class_from_schema(self->schema);
+    self->reader = avro_reader_memory(NULL, 0);
+    return 0;
+}
+
+static PyObject* Reader_read(Reader* self, PyObject* args) {
+    Py_buffer buffer;
+    int rval;
+
+    if (!PyArg_ParseTuple(args, "s*", &buffer)) {
+        Py_RETURN_NONE;
+    }
     avro_value_t value;
-    avro_reader_memory_set_source(reader, buffer.buf, buffer.len);
-    avro_generic_value_new(iface, &value);
+    avro_reader_memory_set_source(self->reader, buffer.buf, buffer.len);
+    avro_generic_value_new(self->iface, &value);
     PyObject* values = PyList_New(0);
-    while ((rval = avro_value_read(reader, &value)) == 0) {
+    while ((rval = avro_value_read(self->reader, &value)) == 0) {
         PyList_Append(values, avro_to_python(&value));
         avro_value_reset(&value);
     }
     avro_value_decref(&value);
-    avro_value_iface_decref(iface);
-    avro_schema_decref(schema);
     PyBuffer_Release(&buffer);
     return values;
 }

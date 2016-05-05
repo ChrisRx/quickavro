@@ -3,9 +3,12 @@
 
 import sys
 import StringIO
+import json
+import struct
 
-import avro.schema
+import avro.datafile
 import avro.io
+import avro.schema
 
 import quickavro
 
@@ -37,12 +40,32 @@ def get_records():
         serialize(record)
     return f.getvalue()
 
+#def get_records():
+    #schema = avro.schema.parse(example_schema)
+    #writer = avro.io.DatumWriter(schema)
+    #f = StringIO.StringIO()
+    #filewriter = avro.datafile.DataFileWriter(open('omg.avro', 'w'), writer, schema)
+    ##encoder = avro.io.BinaryEncoder(f)
+    #def serialize(record):
+        #writer.write(record, encoder)
+    #for record in records:
+        #filewriter.append(record)
+        ##serialize(record)
+    #filewriter.close()
+
 def main():
-    print(repr(get_records()))
-    w = quickavro.Writer()
+    #print(repr(get_records()))
+    print(repr(open('omg.avro', 'r').read()))
+    w = quickavro.Writer(json.loads(example_schema))
     results = []
-    for record in records:
-        results.append(w.write(example_schema, record))
+    header = w.write_header()
+    results.append(header)
+    #r = []
+    #for record in records:
+        #r.append(w.write(record))
+    #r = "".join(r)
+    #results.append(struct.pack('H', len(r)) + r)
+    #results.append(w.sync_marker)
     print(repr("".join(results)))
 
 

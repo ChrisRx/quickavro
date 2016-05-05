@@ -22,10 +22,16 @@ extern "C" {
 #endif
 
 #include <Python.h>
+#include <avro.h>
 
 
 typedef struct {
     PyObject_HEAD
+    avro_schema_t schema;
+    avro_value_iface_t* iface;
+    avro_writer_t writer;
+    char* buffer;
+    size_t buffer_length;
 } Writer;
 
 extern PyTypeObject WriterType;

@@ -32,9 +32,9 @@ def get_records():
     return f.getvalue()
 
 def main():
-    r = quickavro.Reader()
+    r = quickavro.Reader(example_schema)
     records = get_records()
-    records = r.read(example_schema, records)
+    records = r.read(records)
     print("# of records: {0}".format(len(records)))
     for record in records:
         print("name: {name}, age: {age}".format(**record))

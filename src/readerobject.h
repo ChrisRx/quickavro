@@ -22,10 +22,14 @@ extern "C" {
 #endif
 
 #include <Python.h>
+#include <avro.h>
 
 
 typedef struct {
     PyObject_HEAD
+    avro_schema_t schema;
+    avro_value_iface_t* iface;
+    avro_reader_t reader;
 } Reader;
 
 extern PyTypeObject ReaderType;

@@ -68,3 +68,4 @@ vendor/*
 # Data files
 *.avro
 *.avsc
+*.json
