@@ -11,6 +11,10 @@ STATIC_BUILD_DIR = "build/static"
 STATIC_LIB_NAME = "quickavro"
 STATIC_LIB = "{0}/lib{1}.a".format(STATIC_BUILD_DIR, STATIC_LIB_NAME)
 
+def touch(fname, times=None):
+    with open(fname, 'a'):
+        os.utime(fname, times)
+
 def get_version():
     version_regex = re.compile(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', re.MULTILINE)
     with open('quickavro/__init__.py', 'r') as f:
@@ -146,7 +150,8 @@ def compile_vendor_static(static_build_dir, static_lib_name):
         'vendor/avro/lang/c/src/avro/schema.h',
         'vendor/avro/lang/c/src/avro/value.h',
     ]
-    extra_compile_args = ['-O3', '-fPIC', '-g', '-Wall', '-Wfatal-errors', '-DHAVE_STDINT_H']
+    extra_compile_args = ['-O3', '-fPIC', '-g', '-Wall', '-Wfatal-errors', '-DHAVE_STDINT_H', '-DJSON_INLINE=inline']
+    touch('vendor/jansson/src/jansson_config.h')
     objs = c.compile(sources,
         include_dirs=include_dirs,
         extra_preargs=extra_compile_args,
