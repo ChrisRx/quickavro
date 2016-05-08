@@ -15,8 +15,8 @@
  */
 
 #include "convert.h"
-#include <avro.h>
 #include "compat.h"
+#include <avro.h>
 
 
 int avro_error(int rval) {
@@ -159,7 +159,6 @@ static int pydict_to_map(PyObject* obj, avro_value_t* dest) {
         avro_value_t v;
 
         const char* k = PyUnicode_AsUTF8(key);
-        const char* vv = PyUnicode_AsUTF8(value);
         rval = avro_value_add(dest, k, &v, NULL, NULL);
         if (rval == 0) {
             rval = python_to_avro(value, &v);
@@ -222,7 +221,6 @@ static int pystring_to_fixed(PyObject* obj, avro_value_t* value) {
     Py_ssize_t length;
     PyBytes_AsStringAndSize(obj, &buf, &length);
     int rval = avro_error(avro_value_set_fixed(value, buf, length));
-    /*Py_DECREF(b);*/
     return rval;
 }
 

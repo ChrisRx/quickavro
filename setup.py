@@ -168,21 +168,22 @@ def compile_ext(static_lib):
         'vendor/jansson',
         'vendor/jansson/src',
         'vendor/avro/lang/c/src',
-        'vendor/avro/lang/c/src/avro'
+        'vendor/avro/lang/c/src/avro',
     ]
     libraries = []
     library_dirs = []
     sources = [
-        "src/convert.c",
-        "src/readerobject.c",
-        "src/writerobject.c",
-        "src/module.c",
+        'src/convert.c',
+        'src/readerobject.c',
+        'src/writerobject.c',
+        'src/module.c',
     ]
     depends = [
-        "src/compat.h",
-        "src/convert.h",
-        "src/readerobject.h",
-        "src/writerobject.h",
+        'src/compat.h',
+        'src/convert.h',
+        'src/readerobject.h',
+        'src/writerobject.h',
+        "src/quickavro.h",
     ]
     extra_compile_args = ['-Wfatal-errors']
     linker_flags = ['-shared', '-Wl,--export-dynamic']

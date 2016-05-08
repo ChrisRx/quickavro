@@ -17,9 +17,9 @@
 #include "writerobject.h"
 #include "compat.h"
 #include "convert.h"
+#include "quickavro.h"
 #include <avro.h>
 
-#define INITIAL_BUFFER_SIZE 1024
 
 static void Writer_dealloc(Writer* self) {
     Py_TYPE(self)->tp_free((PyObject*)self);
@@ -34,16 +34,16 @@ static PyObject* Writer_new(PyTypeObject* type, PyObject* args, PyObject* kwds) 
 
 static int Writer_init(Writer* self, PyObject* args, PyObject* kwds) {
     char* json_str;
-    /*avro_schema_t schema = NULL;*/
     avro_schema_error_t error;
 
     if (!PyArg_ParseTuple(args, "s", &json_str)) {
-        Py_RETURN_NONE;
+        PyErr_SetString(PyExc_ValueError, "Not provided valid arguments");
+        return -1;
     }
     int r = avro_schema_from_json(json_str, 0, &self->schema, &error);
     if (r != 0 || self->schema == NULL) {
         printf("Oh no, schema no work\n");
-        Py_RETURN_NONE;
+        return -1;
     }
     self->iface = avro_generic_class_from_schema(self->schema);
     self->buffer = (char*)avro_malloc(INITIAL_BUFFER_SIZE);
@@ -89,8 +89,28 @@ static PyObject* Writer_write(Writer* self, PyObject* args) {
     return s;
 }
 
+static PyObject* Writer_write_long(Writer* self, PyObject* args) {
+    PyObject* obj;
+
+    if (!PyArg_ParseTuple(args, "O", &obj)) {
+        Py_RETURN_NONE;
+    }
+    int64_t l = PyLong_AsLongLong(obj);
+    char* buf = (char*)malloc(sizeof(char)*MAX_VARINT_SIZE);
+    uint8_t bytes_written = 0;
+    uint64_t n = (l << 1) ^ (l >> 63);
+    while (n & ~0x7F) {
+        buf[bytes_written++] = (char)((((uint8_t) n) & 0x7F) | 0x80);
+        n >>= 7;
+    }
+    buf[bytes_written++] = (char)n;
+    PyObject* s = PyBytes_FromStringAndSize(buf, bytes_written);
+    return s;
+}
+
 static PyMethodDef Writer_methods[] = {
     {"write", (PyCFunction)Writer_write, METH_VARARGS, ""},
+    {"write_long", (PyCFunction)Writer_write_long, METH_VARARGS, ""},
     {NULL}  /* Sentinel */
 };
 

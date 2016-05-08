@@ -17,6 +17,7 @@
 #include "readerobject.h"
 #include "compat.h"
 #include "convert.h"
+#include "quickavro.h"
 #include <avro.h>
 
 
@@ -39,16 +40,16 @@ static PyObject* Reader_new(PyTypeObject* type, PyObject* args, PyObject* kwds) 
 
 static int Reader_init(Reader* self, PyObject* args, PyObject* kwds) {
     char* json_str;
-    /*avro_schema_t schema = NULL;*/
     avro_schema_error_t error;
 
     if (!PyArg_ParseTuple(args, "s", &json_str)) {
-        Py_RETURN_NONE;
+        PyErr_SetString(PyExc_ValueError, "Not provided valid arguments");
+        return -1;
     }
     int r = avro_schema_from_json(json_str, 0, &self->schema, &error);
     if (r != 0 || self->schema == NULL) {
         printf("Oh no, schema no work\n");
-        Py_RETURN_NONE;
+        return -1;
     }
     self->iface = avro_generic_class_from_schema(self->schema);
     self->reader = avro_reader_memory(NULL, 0);
@@ -75,8 +76,61 @@ static PyObject* Reader_read(Reader* self, PyObject* args) {
     return values;
 }
 
+static PyObject* Reader_read_long(Reader* self, PyObject* args) {
+    Py_buffer buffer;
+
+    if (!PyArg_ParseTuple(args, "s*", &buffer)) {
+        Py_RETURN_NONE;
+    }
+    char* buf = buffer.buf;
+    int64_t l;
+    uint64_t value = 0;
+    uint8_t b;
+    int offset = 0;
+    do {
+        if (offset == MAX_VARINT_SIZE) {
+            PyErr_SetString(PyExc_ValueError, "Varint is too long");
+            return NULL;
+        }
+        b = buf[offset];
+        value |= (int64_t) (b & 0x7F) << (7 * offset);
+        ++offset;
+    } while (b & 0x80);
+    l = ((value >> 1) ^ -(value & 1));
+    return Py_BuildValue("(OO)", PyLong_FromLong(l), PyLong_FromLong(offset));
+}
+
+static PyObject* Reader_read_record(Reader* self, PyObject* args) {
+    Py_buffer buffer;
+    size_t record_size;
+    int rval;
+
+    if (!PyArg_ParseTuple(args, "s*", &buffer)) {
+        Py_RETURN_NONE;
+    }
+    avro_value_t value;
+    avro_reader_memory_set_source(self->reader, buffer.buf, buffer.len);
+    avro_generic_value_new(self->iface, &value);
+    rval = avro_value_read(self->reader, &value);
+    if (rval != 0) {
+        PyErr_Format(PyExc_IOError, "%s", avro_strerror());
+        return NULL;
+    }
+    PyObject* obj = avro_to_python(&value);
+    rval = avro_value_sizeof(&value, &record_size);
+    if (rval != 0) {
+        PyErr_Format(PyExc_IOError, "%s", avro_strerror());
+        return NULL;
+    }
+    avro_value_decref(&value);
+    PyBuffer_Release(&buffer);
+    return Py_BuildValue("(OO)", obj, PyLong_FromLong(record_size));
+}
+
 static PyMethodDef Reader_methods[] = {
     {"read", (PyCFunction)Reader_read, METH_VARARGS, ""},
+    {"read_long", (PyCFunction)Reader_read_long, METH_VARARGS, ""},
+    {"read_record", (PyCFunction)Reader_read_record, METH_VARARGS, ""},
     {NULL}  /* Sentinel */
 };
 
