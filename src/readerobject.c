@@ -97,6 +97,7 @@ static PyObject* Reader_read_long(Reader* self, PyObject* args) {
         ++offset;
     } while (b & 0x80);
     l = ((value >> 1) ^ -(value & 1));
+    PyBuffer_Release(&buffer);
     return Py_BuildValue("(OO)", PyLong_FromLong(l), PyLong_FromLong(offset));
 }
 

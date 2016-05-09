@@ -111,6 +111,7 @@ static PyObject* Writer_write_long(Writer* self, PyObject* args) {
     }
     buf[bytes_written++] = (char)n;
     PyObject* s = PyBytes_FromStringAndSize(buf, bytes_written);
+    free(buf);
     return s;
 }
 
