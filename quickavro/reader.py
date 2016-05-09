@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import zlib
 
 import _quickavro
 
@@ -72,6 +73,8 @@ class FileReader(Reader):
         block = self.f.read(block_length)
         if not block:
             return None
+        if self.codec == 'deflate':
+            block = zlib.decompress(block, -15)
         self.block_count += 1
         return block
 
