@@ -38,13 +38,14 @@ def write_avro_file(n):
             if writer.tell() >= quickavro.DEFAULT_SYNC_INTERVAL:
                 writer.write_sync()
             writer.write_record(record)
+        print("Wrote {0} blocks".format(writer.block_count))
 
 def read_avro_file():
     with quickavro.FileReader(avro_file) as reader:
         record_count = 0
         for record in reader.records():
             record_count += 1
-        print("Read {0} records back from file.".format(record_count))
+        print("Read {0} records ({1} blocks) back from file.".format(record_count, reader.block_count))
 
 def main():
     n = 1000000

@@ -47,7 +47,9 @@ class FileReader(Reader):
         metadata = header.get('meta')
         schema = metadata.get('avro.schema')
         codec = metadata.get('avro.codec')
+        self.sync_marker = header.get('sync')
         super(FileReader, self).__init__(schema, codec)
+        self.block_count = 0
 
     def _read_header(self):
         header, offset = read_header(self.f.read(2048))
@@ -68,6 +70,9 @@ class FileReader(Reader):
         block_length, offset = self.read_long(data)
         self.f.seek(cur+offset)
         block = self.f.read(block_length)
+        if not block:
+            return None
+        self.block_count += 1
         return block
 
     def records(self):
@@ -80,7 +85,11 @@ class FileReader(Reader):
                     break
                 for record in self.read(block):
                     yield record
-            except MemoryError:
+                sync_marker = self.f.read(16)
+                if sync_marker != self.sync_marker:
+                    break
+            except MemoryError as error:
+                print(error)
                 break
 
     def close(self):

@@ -37,23 +37,25 @@ class Writer(object):
 
 class FileWriter(Writer):
     def __init__(self, f):
+        super(FileWriter, self).__init__(None)
         if isinstance(f, basestring):
             self.f = open(f, 'w')
         else:
             self.f = f
         self._schema = None
         self._codec = None
-        super(FileWriter, self).__init__(None)
         self.block = []
+        self.block_count = 1
+        self.block_size = 0
         self.last_sync = 0
 
     def tell(self):
-        return self.f.tell() - self.last_sync
+        return self.block_size
 
     def write_record(self, record):
         record = self.write(record)
         self.block.append(record)
-        #self.f.write(record)
+        self.block_size += len(record)
 
     def write_sync(self):
         data = "".join(self.block)
@@ -63,6 +65,8 @@ class FileWriter(Writer):
         self.f.write(self.sync_marker)
         self.block = []
         self.last_sync = self.f.tell()
+        self.block_count += 1
+        self.block_size = 0
 
     @property
     def schema(self):
@@ -81,7 +85,6 @@ class FileWriter(Writer):
             self.f.seek(0)
         header = super(FileWriter, self).write_header()
         self.f.write(header)
-        self.last_sync = self.f.tell()
 
     def close(self):
         if self.block:
