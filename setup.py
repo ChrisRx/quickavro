@@ -170,11 +170,12 @@ def compile_ext(static_lib):
         'vendor/avro/lang/c/src',
         'vendor/avro/lang/c/src/avro',
     ]
-    libraries = []
+    libraries = ['stdc++']
     library_dirs = []
     sources = [
         'src/convert.c',
         'src/readerobject.c',
+        'src/snappyobject.c',
         'src/writerobject.c',
         'src/module.c',
     ]
@@ -182,6 +183,7 @@ def compile_ext(static_lib):
         'src/compat.h',
         'src/convert.h',
         'src/readerobject.h',
+        'src/snappyobject.h',
         'src/writerobject.h',
         "src/quickavro.h",
     ]

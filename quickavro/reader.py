@@ -2,11 +2,17 @@
 
 import json
 import zlib
+import binascii
+import struct
 
 import _quickavro
 
 from .constants import *
 
+
+def crc32(s):
+    data = binascii.crc32(s) & 0xFFFFFFFF
+    return struct.pack('>I', data)
 
 def read_header(data):
     r = _quickavro.Reader(json.dumps(HEADER_SCHEMA))
@@ -70,11 +76,22 @@ class FileReader(Reader):
         data = self.f.read(MAX_VARINT_SIZE)
         block_length, offset = self.read_long(data)
         self.f.seek(cur+offset)
-        block = self.f.read(block_length)
-        if not block:
-            return None
-        if self.codec == 'deflate':
+        if self.codec == "deflate":
+            block = self.f.read(block_length)
+            if not block:
+                return None
             block = zlib.decompress(block, -15)
+        elif self.codec == "snappy":
+            block = self.f.read(block_length-4)
+            if not block:
+                return None
+            crc = self.f.read(4)
+            assert crc == crc32(block)
+            block = _quickavro.Snappy.uncompress(block)
+        else:
+            block = self.f.read(block_length)
+            if not block:
+                return None
         self.block_count += 1
         return block
 

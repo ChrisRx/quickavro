@@ -22,6 +22,12 @@
 
 
 static void Writer_dealloc(Writer* self) {
+    if (self->schema) {
+        avro_schema_decref(self->schema);
+    }
+    if (self->iface) {
+        avro_value_iface_decref(self->iface);
+    }
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 

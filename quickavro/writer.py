@@ -3,11 +3,17 @@
 import os
 import json
 import zlib
+import binascii
+import struct
 
 import _quickavro
 
 from .constants import *
 
+
+def crc32(s):
+    data = binascii.crc32(s) & 0xFFFFFFFF
+    return struct.pack('>I', data)
 
 class Writer(object):
     def __init__(self, schema=None, codec="null"):
@@ -65,14 +71,22 @@ class FileWriter(Writer):
         self.f.write(self.write_long(len(self.block)))
         if self.codec == 'deflate':
             data = zlib.compress(data)[2:-1]
-        self.f.write(self.write_long(len(data)))
-        self.f.write(data)
+            self.f.write(self.write_long(len(data)))
+            self.f.write(data)
+        elif self.codec == "snappy":
+            data = _quickavro.Snappy.compress(data)
+            self.f.write(self.write_long(len(data)+4))
+            self.f.write(data)
+            crc = crc32(data)
+            self.f.write(crc)
+        else:
+            self.f.write(self.write_long(len(data)))
+            self.f.write(data)
         self.f.write(self.sync_marker)
         self.block = []
         self.last_sync = self.f.tell()
         self.block_count += 1
         self.block_size = 0
-
 
     @property
     def codec(self):
