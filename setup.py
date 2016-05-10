@@ -234,6 +234,9 @@ if __name__ == '__main__':
         ],
         extras_require={
         },
+        setup_requires=[
+            "pytest-runner",
+        ],
         tests_require=[
             "pytest>=2.8.7",
         ],
