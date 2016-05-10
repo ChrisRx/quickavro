@@ -16,8 +16,7 @@ class BinaryEncoder(Encoder):
         self._codec = None
         self._schema = None
         self.sync_marker = os.urandom(SYNC_SIZE)
-        if codec:
-            self.codec = codec
+        self.codec = codec
         if schema:
             self.schema = schema
 
@@ -30,7 +29,7 @@ class BinaryEncoder(Encoder):
     @codec.setter
     def codec(self, codec):
         if codec not in {"deflate", "null", "snappy"}:
-            raise CodecNotSupported()
+            raise CodecNotSupported("Codec {0} is not supported.".format(codec))
         self._codec = codec
 
     @property
