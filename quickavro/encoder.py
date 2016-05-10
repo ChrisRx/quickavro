@@ -3,18 +3,18 @@
 import os
 import json
 
-import _quickavro
+from _quickavro import Encoder
 
 from .constants import *
 from .errors import *
 from .utils import *
 
 
-class BinaryEncoder(object):
+class BinaryEncoder(Encoder):
     def __init__(self, schema=None, codec="null"):
+        super(BinaryEncoder, self).__init__()
         self._codec = None
         self._schema = None
-        self._encoder = _quickavro.Encoder()
         self.sync_marker = os.urandom(SYNC_SIZE)
         if codec:
             self.codec = codec
@@ -42,31 +42,15 @@ class BinaryEncoder(object):
     @schema.setter
     def schema(self, schema):
         self._schema = schema
-        self._encoder.set_schema(json.dumps(schema))
-
-    def write(self, value):
-        return self._encoder.write(value)
-
-    def write_long(self, n):
-        return self._encoder.write_long(n)
-
-    def read(self, value):
-        return self._encoder.read(value)
-
-    def read_long(self, b):
-        return self._encoder.read_long(b)
-
-    def read_record(self, data):
-        record, offset = self._encoder.read_record(data)
-        return record, offset
+        self.set_schema(json.dumps(schema))
 
     def read_block(self, block):
         # XXX this isn't right
-        block_count, offset = self._encoder.read_long(block[:MAX_VARINT_SIZE])
+        block_count, offset = self.read_long(block[:MAX_VARINT_SIZE])
         if block_count < 0:
             return None
         block = block[offset:]
-        block_length, offset = self._encoder.read_long(block[:MAX_VARINT_SIZE])
+        block_length, offset = self.read_long(block[:MAX_VARINT_SIZE])
         block = block[offset:block_length]
         return self.read(block)
 
