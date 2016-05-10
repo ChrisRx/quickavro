@@ -69,3 +69,6 @@ vendor/*
 *.avro
 *.avsc
 *.json
+
+# Test tmp files
+tests/tmp/*
