@@ -32,6 +32,6 @@ vendor:
 	@echo "Done"
 
 test:
-	@py.test
+	@py.test tests/
 	@rm -rf tests/tmp
 	@find . -name '__pycache__' -delete -o -name '*.pyc' -delete
