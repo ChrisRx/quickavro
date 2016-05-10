@@ -235,6 +235,7 @@ if __name__ == '__main__':
         extras_require={
         },
         tests_require=[
+            "pytest>=2.8.7",
         ],
         classifiers=[
             'Development Status :: 5 - Production/Stable',

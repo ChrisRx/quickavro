@@ -30,3 +30,8 @@ vendor:
 	@echo -n "Downloading vendor files ..."
 	@$(MAKE) -C vendor download >/dev/null 2>&1
 	@echo "Done"
+
+test:
+	@py.test
+	@rm -rf tests/tmp
+	@find . -name '__pycache__' -delete -o -name '*.pyc' -delete
