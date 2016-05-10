@@ -8,43 +8,20 @@ import struct
 import _quickavro
 
 from .constants import *
+from .encoder import *
+from .errors import *
+from .utils import *
 
-
-def crc32(s):
-    data = binascii.crc32(s) & 0xFFFFFFFF
-    return struct.pack('>I', data)
 
 def read_header(data):
-    r = _quickavro.Reader(json.dumps(HEADER_SCHEMA))
-    header, offset = r.read_record(data)
-    if not header:
-        return None, 0
-    return header, offset
+    with BinaryEncoder(HEADER_SCHEMA) as encoder:
+        header, offset = encoder.read_record(data)
+        if not header:
+            return None, 0
+        return header, offset
 
 
-class Reader(object):
-    def __init__(self, schema, codec='null'):
-        self.schema = schema
-        self.codec = codec
-        self._reader = _quickavro.Reader(self.schema)
-
-    def read(self, value):
-        return self._reader.read(value)
-
-    def read_long(self, b):
-        return self._reader.read_long(b)
-
-    def read_record(self, data):
-        record, offset = self._reader.read_record(data)
-        return record, offset
-
-    def read_block(self, block):
-        l, offset = self.read_long(block[:MAX_VARINT_SIZE])
-        block = block[offset:]
-        return self.read(block)
-
-
-class FileReader(Reader):
+class FileReader(object):
     def __init__(self, f):
         if isinstance(f, basestring):
             self.f = open(f, 'r')
@@ -52,10 +29,10 @@ class FileReader(Reader):
             self.f = f
         header = self._read_header()
         metadata = header.get('meta')
-        schema = metadata.get('avro.schema')
-        codec = metadata.get('avro.codec')
+        self.schema = json.loads(metadata.get('avro.schema'))
+        self.codec = metadata.get('avro.codec')
         self.sync_marker = header.get('sync')
-        super(FileReader, self).__init__(schema, codec)
+        self.encoder = BinaryEncoder(self.schema, self.codec)
         self.block_count = 0
 
     def _read_header(self):
@@ -68,13 +45,13 @@ class FileReader(Reader):
     def _read_block(self):
         cur = self.f.tell()
         data = self.f.read(MAX_VARINT_SIZE)
-        block_count, offset = self.read_long(data)
+        block_count, offset = self.encoder.read_long(data)
         if block_count < 0:
             return None
         self.f.seek(cur+offset)
         cur = self.f.tell()
         data = self.f.read(MAX_VARINT_SIZE)
-        block_length, offset = self.read_long(data)
+        block_length, offset = self.encoder.read_long(data)
         self.f.seek(cur+offset)
         if self.codec == "deflate":
             block = self.f.read(block_length)
@@ -87,7 +64,7 @@ class FileReader(Reader):
                 return None
             crc = self.f.read(4)
             assert crc == crc32(block)
-            block = _quickavro.Snappy.uncompress(block)
+            block = snappy_uncompress(block)
         else:
             block = self.f.read(block_length)
             if not block:
@@ -103,7 +80,7 @@ class FileReader(Reader):
                 block = self._read_block()
                 if not block:
                     break
-                for record in self.read(block):
+                for record in self.encoder.read(block):
                     yield record
                 sync_marker = self.f.read(16)
                 if sync_marker != self.sync_marker:

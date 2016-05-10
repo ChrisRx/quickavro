@@ -174,17 +174,15 @@ def compile_ext(static_lib):
     library_dirs = []
     sources = [
         'src/convert.c',
-        'src/readerobject.c',
+        'src/encoderobject.c',
         'src/snappyobject.c',
-        'src/writerobject.c',
         'src/module.c',
     ]
     depends = [
         'src/compat.h',
         'src/convert.h',
-        'src/readerobject.h',
+        'src/encoderobject.h',
         'src/snappyobject.h',
-        'src/writerobject.h',
         "src/quickavro.h",
     ]
     extra_compile_args = ['-Wfatal-errors']

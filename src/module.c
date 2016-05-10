@@ -17,9 +17,8 @@
 #include <Python.h>
 #include "compat.h"
 
-#include "readerobject.h"
+#include "encoderobject.h"
 #include "snappyobject.h"
-#include "writerobject.h"
 
 
 #ifdef __cplusplus
@@ -35,15 +34,11 @@ MOD_INIT(_quickavro)
 {
     PyObject* m;
 
-    if (PyType_Ready(&ReaderType) < 0) {
+    if (PyType_Ready(&EncoderType) < 0) {
         return MOD_ERROR_VAL;
     }
 
     if (PyType_Ready(&SnappyType) < 0) {
-        return MOD_ERROR_VAL;
-    }
-
-    if (PyType_Ready(&WriterType) < 0) {
         return MOD_ERROR_VAL;
     }
 
@@ -53,14 +48,11 @@ MOD_INIT(_quickavro)
         return MOD_ERROR_VAL;
     }
 
-    Py_INCREF(&ReaderType);
-    PyModule_AddObject(m, "Reader", (PyObject*)&ReaderType);
+    Py_INCREF(&EncoderType);
+    PyModule_AddObject(m, "Encoder", (PyObject*)&EncoderType);
 
     Py_INCREF(&SnappyType);
     PyModule_AddObject(m, "Snappy", (PyObject*)&SnappyType);
-
-    Py_INCREF(&WriterType);
-    PyModule_AddObject(m, "Writer", (PyObject*)&WriterType);
 
     return MOD_SUCCESS_VAL(m);
 }

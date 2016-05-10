@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __WRITEROBJECT_H
-#define __WRITEROBJECT_H
+#ifndef __ENCODEROBJECT_H
+#define __ENCODEROBJECT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,12 +29,14 @@ typedef struct {
     PyObject_HEAD
     avro_schema_t schema;
     avro_value_iface_t* iface;
+    avro_reader_t reader;
     avro_writer_t writer;
+
     char* buffer;
     size_t buffer_length;
-} Writer;
+} Encoder;
 
-extern PyTypeObject WriterType;
+extern PyTypeObject EncoderType;
 
 #ifdef __cplusplus
 }
