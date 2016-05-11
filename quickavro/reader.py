@@ -13,16 +13,9 @@ from .errors import *
 from .utils import *
 
 
-def read_header(data):
-    with BinaryEncoder(HEADER_SCHEMA) as encoder:
-        header, offset = encoder.read_record(data)
-        if not header:
-            return None, 0
-        return header, offset
-
-
-class FileReader(object):
+class FileReader(BlockEncoder):
     def __init__(self, f):
+        super(FileReader, self).__init__()
         if isinstance(f, basestring):
             self.f = open(f, 'r')
         else:
@@ -32,8 +25,6 @@ class FileReader(object):
         self.schema = json.loads(metadata.get('avro.schema'))
         self.codec = metadata.get('avro.codec')
         self.sync_marker = header.get('sync')
-        self.encoder = BinaryEncoder(self.schema, self.codec)
-        self.block_count = 0
 
     def _read_header(self):
         header, offset = read_header(self.f.read(2048))
@@ -45,13 +36,13 @@ class FileReader(object):
     def _read_block(self):
         cur = self.f.tell()
         data = self.f.read(MAX_VARINT_SIZE)
-        block_count, offset = self.encoder.read_long(data)
+        block_count, offset = self.read_long(data)
         if block_count < 0:
             return None
         self.f.seek(cur+offset)
         cur = self.f.tell()
         data = self.f.read(MAX_VARINT_SIZE)
-        block_length, offset = self.encoder.read_long(data)
+        block_length, offset = self.read_long(data)
         self.f.seek(cur+offset)
         if self.codec == "deflate":
             block = self.f.read(block_length)
@@ -80,7 +71,7 @@ class FileReader(object):
                 block = self._read_block()
                 if not block:
                     break
-                for record in self.encoder.read(block):
+                for record in self.read(block):
                     yield record
                 sync_marker = self.f.read(16)
                 if sync_marker != self.sync_marker:
@@ -91,9 +82,3 @@ class FileReader(object):
 
     def close(self):
         self.f.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.close()

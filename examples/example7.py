@@ -9,7 +9,7 @@ import quickavro
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-avro_file = os.path.join(current_dir, 'example3.avro')
+avro_file = os.path.join(current_dir, 'example7.avro')
 
 records = [
     {"name": "Larry", "age": 21},
@@ -25,8 +25,8 @@ def generate_records(records, n):
         yield records[i % len(records)]
 
 def write_avro_file(n):
-    with quickavro.FileWriter(avro_file) as writer:
-        writer.schema = {
+    with quickavro.BlockEncoder() as encoder:
+        encoder.schema = {
           "type": "record",
           "name": "Person",
           "fields": [
@@ -34,23 +34,30 @@ def write_avro_file(n):
             {"name": "age",  "type": ["int", "null"]}
           ]
         }
-        #writer.write_blocks(records
-        #with open(avro_file, "w") as f:
-            #f.write(encoder.header)
-            #for block in encoder.write_blocks(records):
-                #f.write(block)
-        for record in generate_records(records, n):
-            #if writer.tell() >= quickavro.DEFAULT_SYNC_INTERVAL:
-                #writer.write_sync()
-            writer.write_record(record)
-        print("Wrote {0} blocks".format(writer.block_count))
+        with open(avro_file, "w") as f:
+            f.write(encoder.header)
+            for block in encoder.write_blocks(generate_records(records, n)):
+                f.write(block)
 
 def read_avro_file():
-    with quickavro.FileReader(avro_file) as reader:
+    with quickavro.BlockEncoder() as encoder:
+        encoder.schema = {
+          "type": "record",
+          "name": "Person",
+          "fields": [
+            {"name": "name", "type": "string"},
+            {"name": "age",  "type": ["int", "null"]}
+          ]
+        }
+        with open(avro_file, "r") as f:
+            data = f.read()
+
+        header, data = encoder.read_header(data)
+        
         record_count = 0
-        for record in reader.records():
+        for record in encoder.read_blocks(data):
             record_count += 1
-        print("Read {0} records ({1} blocks) back from file.".format(record_count, reader.block_count))
+        print("Read {0} records ({1} blocks) back from file.".format(record_count, encoder.block_count))
 
 def main():
     n = 1000000

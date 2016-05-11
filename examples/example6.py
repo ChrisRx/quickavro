@@ -8,7 +8,7 @@ import quickavro
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-avro_file = os.path.join(current_dir, 'example5.avro')
+avro_file = os.path.join(current_dir, 'example6.avro')
 
 records = [
     {"name": "Larry", "age": 21},
@@ -19,8 +19,8 @@ records = [
 ]
 
 def main():
-    with quickavro.FileWriter(avro_file, codec='snappy') as writer:
-        writer.schema = {
+    with quickavro.BlockEncoder() as encoder:
+        encoder.schema = {
           "type": "record",
           "name": "Person",
           "fields": [
@@ -28,12 +28,19 @@ def main():
             {"name": "age",  "type": ["int", "null"]}
           ]
         }
-        # Write 1 block
-        for record in records:
-            writer.write_record(record)
+        with open(avro_file, "w") as f:
+            f.write(encoder.header)
+            for block in encoder.write_blocks(records):
+                f.write(block)
 
-    with quickavro.FileReader(avro_file) as reader:
-        for record in reader.records():
+
+        # Read
+        with open(avro_file, "r") as f:
+            data = f.read()
+
+        header, data = encoder.read_header(data)
+
+        for record in encoder.read_blocks(data):
             print("name: {name}, age: {age}".format(**record))
 
 

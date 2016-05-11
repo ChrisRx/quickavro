@@ -29,11 +29,15 @@ def main():
             {"name": "age",  "type": ["int", "null"]}
           ]
         }
-        # Must call FileWriter.write_sync() to flush record buffer when
-        # not using with context
+        # When not using context handling blocks must be done manually
+        # by calling FileWriter.flush()
         for record in records:
+            if writer.block_size >= quickavro.DEFAULT_SYNC_INTERVAL:
+                writer.flush()
             writer.write_record(record)
-        writer.write_sync()
+        # Must call FileWriter.close() to flush record buffer when
+        # not using with context
+        writer.close()
 
     with open(avro_file, 'r') as f:
         reader = quickavro.FileReader(f)
