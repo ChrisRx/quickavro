@@ -3,19 +3,20 @@
 
 import sys
 
-import _quickavro
+from .reader import FileReader
 
 
 def main():
+    if not len(sys.argv) > 1:
+        sys.stderr.write("Missing arguments\n")
+        sys.exit(0)
     try:
-        reader = _quickavro.Reader()
-        print(reader.something(sys.argv[1]))
+        with FileReader(sys.argv[1]) as reader:
+            for record in reader.records():
+                print(record)
     except KeyboardInterrupt:
         sys.exit(1)
 
 
 if __name__ == '__main__':
-    if not len(sys.argv) > 1:
-        sys.stderr.write("Missing arguments\n")
-        sys.exit(0)
     main()

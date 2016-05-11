@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 VERSION = b'\x01'
 MAGIC = b'Obj' + VERSION
 SYNC_SIZE = 16

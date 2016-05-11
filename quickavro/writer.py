@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import _quickavro
-
 from .constants import *
 from .encoder import *
 from .errors import *

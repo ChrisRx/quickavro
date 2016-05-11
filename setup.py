@@ -223,7 +223,7 @@ if __name__ == '__main__':
         ],
         entry_points={
             'console_scripts': [
-                #'quickavro = quickavro.__main__:main'
+                'quickavro = quickavro.__main__:main'
             ]
         },
         zip_safe=False,
