@@ -78,9 +78,22 @@ static PyObject* Snappy_uncompress(Snappy* self, PyObject* args) {
     return result;
 }
 
+static PyObject* Snappy_validate(Snappy* self, PyObject* args) {
+    Py_buffer buffer;
+
+    if (!PyArg_ParseTuple(args, "s*", &buffer)) {
+        Py_RETURN_NONE;
+    }
+    if (snappy_validate_compressed_buffer(buffer.buf, buffer.len) == SNAPPY_OK) {
+        Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
 static PyMethodDef Snappy_methods[] = {
     {"compress", (PyCFunction)Snappy_compress, METH_VARARGS|METH_CLASS, ""},
     {"uncompress", (PyCFunction)Snappy_uncompress, METH_VARARGS|METH_CLASS, ""},
+    {"validate", (PyCFunction)Snappy_validate, METH_VARARGS|METH_CLASS, ""},
     {NULL}  /* Sentinel */
 };
 

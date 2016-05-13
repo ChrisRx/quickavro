@@ -16,3 +16,6 @@ def snappy_compress(data):
 
 def snappy_uncompress(data):
     return _quickavro.Snappy.uncompress(data)
+
+def snappy_validate(data):
+    return _quickavro.Snappy.validate(data)

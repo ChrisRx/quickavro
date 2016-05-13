@@ -19,7 +19,7 @@ make install
 ```Python
 import quickavro
 
-with quickavro.FileReader("file.avro") as reader:
+with quickavro.FileReader("example.avro") as reader:
     for record in reader.records():
         print(record)
 ```
@@ -37,7 +37,7 @@ records = [
     {"name": "Larry of the Void", "age": None},
 ]
 
-with quickavro.FileWriter(avro_file) as writer:
+with quickavro.FileWriter("example.avro") as writer:
     writer.schema = {
       "type": "record",
       "name": "Person",
@@ -47,7 +47,56 @@ with quickavro.FileWriter(avro_file) as writer:
       ]
     }
     for record in records:
-        if writer.tell() >= quickavro.DEFAULT_SYNC_INTERVAL:
-            writer.write_sync()
         writer.write_record(record)
+```
+
+## Reading an avro file with BinaryEncoder
+
+```Python
+import quickavro
+
+with quickavro.BinaryEncoder() as encoder:
+    encoder.schema = {
+      "type": "record",
+      "name": "Person",
+      "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "age",  "type": ["int", "null"]}
+      ]
+    }
+    with open("example.avro", "r") as f:
+        data = f.read()
+
+    header, data = encoder.read_header(data)
+
+    for record in encoder.read_blocks(data):
+        print(record)
+```
+
+## Writing an avro file with BinaryEncoder
+
+```Python
+import quickavro
+
+records = [
+    {"name": "Larry", "age": 21},
+    {"name": "Gary", "age": 34},
+    {"name": "Barry", "age": 27},
+    {"name": "Dark Larry", "age": 1134},
+    {"name": "Larry of the Void", "age": None},
+]
+
+with quickavro.BinaryEncoder() as encoder:
+    encoder.schema = {
+      "type": "record",
+      "name": "Person",
+      "fields": [
+        {"name": "name", "type": "string"},
+        {"name": "age",  "type": ["int", "null"]}
+      ]
+    }
+    with open("example.avro", "w") as f:
+        f.write(encoder.header)
+        for block in encoder.write_blocks(records):
+            f.write(block)
 ```

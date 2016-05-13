@@ -19,7 +19,7 @@ records = [
 ]
 
 def main():
-    with quickavro.BlockEncoder() as encoder:
+    with quickavro.BinaryEncoder() as encoder:
         encoder.schema = {
           "type": "record",
           "name": "Person",

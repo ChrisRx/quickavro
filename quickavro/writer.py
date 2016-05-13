@@ -6,16 +6,13 @@ from .errors import *
 from .utils import *
 
 
-class FileWriter(BlockEncoder):
+class FileWriter(BinaryEncoder):
     def __init__(self, f, codec="null"):
         super(FileWriter, self).__init__(codec=codec)
         if isinstance(f, basestring):
             self.f = open(f, 'w')
         else:
             self.f = f
-
-    def tell(self):
-        return self.block_size
 
     def write_record(self, record):
         if self.block_size >= DEFAULT_SYNC_INTERVAL:

@@ -34,14 +34,7 @@ def write_avro_file(n):
             {"name": "age",  "type": ["int", "null"]}
           ]
         }
-        #writer.write_blocks(records
-        #with open(avro_file, "w") as f:
-            #f.write(encoder.header)
-            #for block in encoder.write_blocks(records):
-                #f.write(block)
         for record in generate_records(records, n):
-            #if writer.tell() >= quickavro.DEFAULT_SYNC_INTERVAL:
-                #writer.write_sync()
             writer.write_record(record)
         print("Wrote {0} blocks".format(writer.block_count))
 

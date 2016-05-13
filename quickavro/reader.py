@@ -11,72 +11,66 @@ from .errors import *
 from .utils import *
 
 
-class FileReader(BlockEncoder):
+class FileReader(BinaryEncoder):
     def __init__(self, f):
         super(FileReader, self).__init__()
         if isinstance(f, basestring):
             self.f = open(f, 'r')
         else:
             self.f = f
-        header = self._read_header()
+        header = self.read_header()
         metadata = header.get('meta')
         self.schema = json.loads(metadata.get('avro.schema'))
         self.codec = metadata.get('avro.codec')
         self.sync_marker = header.get('sync')
 
-    def _read_header(self):
+    def close(self):
+        self.f.close()
+
+    def peek(self, size):
+        cur = self.f.tell()
+        data = self.f.read(size)
+        self.f.seek(cur)
+        return data
+
+    def read_block(self):
+        block_count = self.read_long()
+        block_length = self.read_long()
+        data = self.f.read(block_length)
+        if not data:
+            return None
+        if self.codec == "deflate":
+            data = zlib.decompress(data, -15)
+        elif self.codec == "snappy":
+            crc = data[-4:]
+            data = snappy_uncompress(data[:-4])
+            if crc != crc32(data):
+                raise SnappyChecksumError("Snappy CRC32 check has failed.")
+        self.block_count += 1
+        return data
+
+    def read_blocks(self):
+        while True:
+            block = self.read_block()
+            if not block:
+                break
+            for record in self.read(block):
+                yield record
+            sync_marker = self.f.read(16)
+            if sync_marker != self.sync_marker:
+                break
+
+    def read_header(self):
         header, offset = read_header(self.f.read(2048))
-        if header is None:
-            raise Exception("Cannot do the thing with the header reading and such.")
         self.f.seek(offset)
         return header
 
-    def _read_block(self):
+    def read_long(self):
+        data = self.peek(MAX_VARINT_SIZE)
+        l, offset = super(FileReader, self).read_long(data)
         cur = self.f.tell()
-        data = self.f.read(MAX_VARINT_SIZE)
-        block_count, offset = self.read_long(data)
-        if block_count < 0:
-            return None
         self.f.seek(cur+offset)
-        cur = self.f.tell()
-        data = self.f.read(MAX_VARINT_SIZE)
-        block_length, offset = self.read_long(data)
-        self.f.seek(cur+offset)
-        if self.codec == "deflate":
-            block = self.f.read(block_length)
-            if not block:
-                return None
-            block = zlib.decompress(block, -15)
-        elif self.codec == "snappy":
-            block = self.f.read(block_length-4)
-            if not block:
-                return None
-            crc = self.f.read(4)
-            assert crc == crc32(block)
-            block = snappy_uncompress(block)
-        else:
-            block = self.f.read(block_length)
-            if not block:
-                return None
-        self.block_count += 1
-        return block
+        return l
 
     def records(self):
-        if self.f.tell() == 0:
-            header_data = self._read_header()
-        while True:
-            try:
-                block = self._read_block()
-                if not block:
-                    break
-                for record in self.read(block):
-                    yield record
-                sync_marker = self.f.read(16)
-                if sync_marker != self.sync_marker:
-                    break
-            except MemoryError as error:
-                print(error)
-                break
-
-    def close(self):
-        self.f.close()
+        return self.read_blocks()

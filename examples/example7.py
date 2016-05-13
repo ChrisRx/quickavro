@@ -25,7 +25,7 @@ def generate_records(records, n):
         yield records[i % len(records)]
 
 def write_avro_file(n):
-    with quickavro.BlockEncoder() as encoder:
+    with quickavro.BinaryEncoder() as encoder:
         encoder.schema = {
           "type": "record",
           "name": "Person",
@@ -40,7 +40,7 @@ def write_avro_file(n):
                 f.write(block)
 
 def read_avro_file():
-    with quickavro.BlockEncoder() as encoder:
+    with quickavro.BinaryEncoder() as encoder:
         encoder.schema = {
           "type": "record",
           "name": "Person",
