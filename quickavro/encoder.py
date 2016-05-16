@@ -135,24 +135,47 @@ class BinaryEncoder(Encoder):
 
 
 class enum(object):
-    def __init__(self, name, value, index):
+    def __init__(self, name, index, value):
         self.name = name
-        self.value = value
         self.index = index
+        self.value = value
 
     def __str__(self):
-        return self.name
+        return self.value
 
     def __repr__(self):
         return self.__str__()
 
 
+class MetaEnum(type):
+    def __new__(cls, name, bases, attrs):
+        symbols = attrs.get('symbols')
+        if symbols is None:
+            attrs['symbols'] = []
+        for i, symbol in enumerate(symbols):
+            attrs[symbol] = enum(name, i, symbol)
+        attrs['name'] = name
+        obj = super(MetaEnum, cls).__new__(cls, name, bases, attrs)
+        obj.__class__.__name__ = 'enum'
+        return obj
+
+    @property
+    def T(cls):
+        return {"name": cls.name, "type": "enum", "symbols": cls.symbols}
+
+
 class Enum(object):
+    __metaclass__ = MetaEnum
+
+    symbols = []
+
     def __init__(self, name, values):
+        if not name or not values:
+            raise Exception("Must provide blah")
         self.name = name
         self.symbols = values.split(" ")
         for i, v in enumerate(self.symbols):
-            setattr(self, v, enum(self.name, v, i))
+            setattr(self, v, enum(self.name, i, v))
 
     @property
     def T(self):
