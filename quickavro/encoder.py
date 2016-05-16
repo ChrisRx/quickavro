@@ -132,3 +132,28 @@ class BinaryEncoder(Encoder):
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.close()
+
+
+class enum(object):
+    def __init__(self, name, value, index):
+        self.name = name
+        self.value = value
+        self.index = index
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.__str__()
+
+
+class Enum(object):
+    def __init__(self, name, values):
+        self.name = name
+        self.symbols = values.split(" ")
+        for i, v in enumerate(self.symbols):
+            setattr(self, v, enum(self.name, v, i))
+
+    @property
+    def T(self):
+        return {"name": self.name, "type": "enum", "symbols": self.symbols}

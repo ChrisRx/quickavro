@@ -209,7 +209,19 @@ static int pynone_to_null(PyObject* obj, avro_value_t* value) {
 }
 
 static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
-    int index = PyLong_AsLong(obj);
+    // Could be more efficient. Should figure out something better
+    // for passing in the schema possibly. Should also be able to
+    // pass in just the index also.
+    // if (!strcmp(Py_TYPE(obj)->tp_name == "enum")) {
+    //     PyErr_SetString();
+    //     return NULL;
+    // }
+    avro_schema_t schema = avro_value_get_schema(value);
+    /*const char* symbol_name = PyUnicode_AsUTF8(obj);*/
+    PyObject* s = PyObject_GetAttrString(obj, "value");
+    const char* symbol_name = PyUnicode_AsUTF8(s);
+    int index = avro_schema_enum_get_by_name(schema, symbol_name);
+    /*int index = PyLong_AsLong(obj);*/
     return avro_error(avro_value_set_enum(value, index));
 }
 
@@ -266,8 +278,15 @@ static int python_to_union(PyObject* obj, avro_value_t* value) {
     int branch_index;
     avro_value_t branch;
     avro_schema_t schema = avro_value_get_schema(value);
-    const char* avro_type = lookup(Py_TYPE(obj)->tp_name);
-    avro_schema_t branch_schema = avro_schema_union_branch_by_name(schema, &branch_index, avro_type);
+    const char* name;
+    // Will need to do type checks to ensure there are no segfaults
+    if (strcmp(Py_TYPE(obj)->tp_name, "enum") == 0) {
+        PyObject* n = PyObject_GetAttrString(obj, "name");
+        name = PyUnicode_AsUTF8(n);
+    } else {
+        name = lookup(Py_TYPE(obj)->tp_name);
+    }
+    avro_schema_t branch_schema = avro_schema_union_branch_by_name(schema, &branch_index, name);
     if (branch_schema == NULL) {
         printf("Couldn't find the union branch\n");
         return -1;
@@ -277,6 +296,16 @@ static int python_to_union(PyObject* obj, avro_value_t* value) {
 }
 
 PyObject* avro_to_python(avro_value_t* value) {
+    // The Avro spec calls for defaults to only be applied on read. If
+    // defaults are handled they *could* be done here with a function
+    // that wraps the type conversion functions checking for NoneType
+    // and returning the default value when NoneType is encountered.
+    // This is made difficult since the avro_schema_t does not contain
+    // this information currently. The other option would be to make
+    // a Python closure that returns a function that applies defaults.
+    // This would be light weight and would fit with the general
+    // design of quickavro to be more expressive in Python and let C
+    // just do the heavy lifting.
     avro_type_t value_type = avro_value_get_type(value);
     switch (value_type) {
         case AVRO_STRING:
@@ -308,7 +337,6 @@ PyObject* avro_to_python(avro_value_t* value) {
         case AVRO_UNION:
             return union_to_python(value);
         case AVRO_LINK:
-            // What even is this????
         default:
             fprintf(stderr, "Unhandled Type: %d\n", value_type);
     }
@@ -347,7 +375,6 @@ int python_to_avro(PyObject* obj, avro_value_t* value) {
         case AVRO_UNION:
             return python_to_union(obj, value);
         case AVRO_LINK:
-            // What even is this????
         default:
             fprintf(stderr, "Unhandled Type: %d\n", value_type);
     }

@@ -138,7 +138,7 @@ static PyObject* Encoder_set_schema(Encoder* self, PyObject* args) {
     }
     int r = avro_schema_from_json(json_str, 0, &self->schema, &error);
     if (r != 0 || self->schema == NULL) {
-        printf("Oh no, schema no work\n");
+        PyErr_Format(PyExc_IOError, "%s", avro_strerror());
         return NULL;
     }
     self->iface = avro_generic_class_from_schema(self->schema);

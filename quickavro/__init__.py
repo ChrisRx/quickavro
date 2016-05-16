@@ -15,7 +15,7 @@ __title__ = 'quickavro'
 __version__ = '0.1.0'
 __authors__ = ['Chris Marshall']
 __license__ = 'Apache 2.0'
-__all__ = ['BinaryEncoder', 'FileReader', 'FileWriter']
+__all__ = ['BinaryEncoder', 'Enum', 'FileReader', 'FileWriter']
 
 from .constants import (
     DEFAULT_SYNC_INTERVAL,
@@ -25,6 +25,6 @@ from .errors import (
     CodecNotSupported,
     InvalidSchemaError
 )
-from .encoder import BinaryEncoder
+from .encoder import BinaryEncoder, Enum
 from .reader import FileReader
 from .writer import FileWriter
