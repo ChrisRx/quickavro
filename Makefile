@@ -35,3 +35,8 @@ test:
 	@py.test tests/
 	@rm -rf tests/tmp
 	@find . -name '__pycache__' -delete -o -name '*.pyc' -delete
+
+vtest:
+	@py.test tests/ -sv
+	@rm -rf tests/tmp
+	@find . -name '__pycache__' -delete -o -name '*.pyc' -delete
