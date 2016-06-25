@@ -34,3 +34,4 @@ else:
     range = xrange
 
     ensure_bytes = lambda s: s
+    ensure_str = lambda s: s
