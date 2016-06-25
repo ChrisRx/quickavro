@@ -10,6 +10,7 @@ from .constants import *
 from .errors import *
 from .utils import *
 
+from ._compat import *
 
 def read_header(data):
     with BinaryEncoder(HEADER_SCHEMA) as encoder:
@@ -23,8 +24,8 @@ def write_header(schema, sync_marker, codec="null"):
         header = {
             "magic": MAGIC,
             "meta": {
-                "avro.codec": codec,
-                "avro.schema": json.dumps(schema)
+                "avro.codec": ensure_bytes(codec),
+                "avro.schema": ensure_bytes(json.dumps(schema))
             },
             "sync": sync_marker
         }
@@ -100,7 +101,7 @@ class BinaryEncoder(Encoder):
         self.set_schema(json.dumps(schema))
 
     def write_block(self):
-        data = "".join(self.block)
+        data = b"".join(self.block)
         block_count = self.write_long(len(self.block))
         if self.codec == 'deflate':
             data = zlib.compress(data)[2:-1]
@@ -164,9 +165,7 @@ class MetaEnum(type):
         return {"name": cls.name, "type": "enum", "symbols": cls.symbols}
 
 
-class Enum(object):
-    __metaclass__ = MetaEnum
-
+class Enum(with_metaclass(MetaEnum)):
     symbols = []
 
     def __init__(self, name, values):

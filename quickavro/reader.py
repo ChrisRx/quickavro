@@ -15,13 +15,13 @@ class FileReader(BinaryEncoder):
     def __init__(self, f):
         super(FileReader, self).__init__()
         if isinstance(f, basestring):
-            self.f = open(f, 'r')
+            self.f = open(f, 'rb')
         else:
             self.f = f
         header = self.read_header()
         metadata = header.get('meta')
-        self.schema = json.loads(metadata.get('avro.schema'))
-        self.codec = metadata.get('avro.codec')
+        self.schema = json.loads(ensure_str(metadata.get('avro.schema')))
+        self.codec = ensure_str(metadata.get('avro.codec'))
         self.sync_marker = header.get('sync')
 
     def close(self):

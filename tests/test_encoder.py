@@ -20,7 +20,7 @@ class TestEncoder(object):
     def test_type_bytes(self):
         with quickavro.BinaryEncoder() as encoder:
             encoder.schema = {"type": "bytes"}
-            result = encoder.write("test")
+            result = encoder.write(b"test")
             assert result == b"\x08test"
 
     def test_type_int32(self):

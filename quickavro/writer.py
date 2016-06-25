@@ -5,12 +5,14 @@ from .encoder import *
 from .errors import *
 from .utils import *
 
+from ._compat import *
+
 
 class FileWriter(BinaryEncoder):
     def __init__(self, f, codec="null"):
         super(FileWriter, self).__init__(codec=codec)
         if isinstance(f, basestring):
-            self.f = open(f, 'w')
+            self.f = open(f, 'wb')
         else:
             self.f = f
 
