@@ -12,6 +12,22 @@ from .utils import *
 
 
 class FileReader(BinaryEncoder):
+    """
+    The :class:`FileReader` object implements :class:`quickavro.BinaryEncoder`
+    and provides and interface to read Avro files.
+
+    :param f: File-like object or path of file that :class:`FileReader`
+        will read from.
+
+    Example:
+
+    .. code-block:: python
+
+        with quickavro.FileReader("test.avro") as reader:
+            for record in reader.records():
+                print(record)
+    """
+
     def __init__(self, f):
         super(FileReader, self).__init__()
         if isinstance(f, basestring):

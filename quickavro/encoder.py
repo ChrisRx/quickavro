@@ -13,6 +13,11 @@ from .utils import *
 from ._compat import *
 
 def read_header(data):
+    """
+    Reads Avro binary file header
+
+    :param data: bytes representing Avro file header.
+    """
     with BinaryEncoder(HEADER_SCHEMA) as encoder:
         header, offset = encoder.read_record(data)
         if not header:
@@ -20,6 +25,13 @@ def read_header(data):
         return header, offset
 
 def write_header(schema, sync_marker, codec="null"):
+    """
+    Writes Avro binary file header
+
+    :param schema: Dictionary to use as Avro schema.
+    :param sync_marker: str used to verify blocks.
+    :param codec: (optional) Compression codec.
+    """
     with BinaryEncoder(HEADER_SCHEMA, codec) as encoder:
         header = {
             "magic": MAGIC,
@@ -33,6 +45,35 @@ def write_header(schema, sync_marker, codec="null"):
 
 
 class BinaryEncoder(Encoder):
+    """
+    The object used to implement binary Avro encoding in quickavro. It
+    is used internally and is exposed in the quickavro Python API.
+
+
+    :param schema: (optional) Dictionary to use as Avro schema for this
+        :class:`BinaryEncoder`.
+    :param codec: (optional) Compression codec used with
+        :class:`BinaryEncoder`.
+
+    Example:
+
+    .. code-block:: python
+
+        with quickavro.BinaryEncoder() as encoder:
+            encoder.schema = {
+              "type": "record",
+              "name": "Person",
+              "fields": [
+                {"name": "name", "type": "string"},
+                {"name": "age",  "type": ["int", "null"]}
+              ]
+            }
+            with open("test.avro, "wb") as f:
+                f.write(encoder.header)
+                for block in encoder.write_blocks(records):
+                    f.write(block)
+    """
+
     def __init__(self, schema=None, codec="null"):
         super(BinaryEncoder, self).__init__()
         self._codec = None
