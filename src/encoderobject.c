@@ -174,7 +174,7 @@ static PyObject* Encoder_write(Encoder* self, PyObject* args) {
 
     if (rval) {
         avro_value_decref(&value);
-        Py_RETURN_NONE;
+        return NULL;
     }
     PyObject* s = PyBytes_FromStringAndSize(self->buffer, avro_writer_tell(self->writer));
     avro_writer_reset(self->writer);
