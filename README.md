@@ -12,6 +12,10 @@ make
 make install
 ```
 
+# Documentation
+
+[http://chrisrx.github.io/quickavro](http://chrisrx.github.io/quickavro)
+
 # Usage
 
 ## Reading an avro file
