@@ -1,2 +1,3 @@
+docs/* linguist-documentation
 *.c linguist-language=C
 *.h linguist-language=C
