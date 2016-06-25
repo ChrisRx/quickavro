@@ -20,7 +20,7 @@ install-wheel: build-wheel
 
 clean:
 	@echo "Cleaning up existing build files..."
-	@rm -rf build dist MANIFEST *.egg-info *.egg htmlcov tests/tmp .cache .benchmarks tmp
+	@rm -rf build dist MANIFEST *.egg-info *.egg htmlcov tests/tmp .cache .benchmarks tmp .eggs
 	@find . -name '__pycache__' -delete -print -o -name '*.pyc' -delete -print
 
 clean-all: clean
