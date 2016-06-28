@@ -68,8 +68,10 @@ static PyObject* Encoder_read(Encoder* self, PyObject* args) {
     avro_generic_value_new(self->iface, &value);
     PyObject* values = PyList_New(0);
     while ((rval = avro_value_read(self->reader, &value)) == 0) {
-        PyList_Append(values, avro_to_python(&value));
+        PyObject* item = avro_to_python(&value);
+        PyList_Append(values, item);
         avro_value_reset(&value);
+        Py_DECREF(item);
     }
     avro_value_decref(&value);
     PyBuffer_Release(&buffer);
