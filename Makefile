@@ -15,7 +15,8 @@ install:
 
 publish: test build
 	python setup.py register
-	python setup.py bdist_wheel upload
+	python setup.py sdist upload
+	#python setup.py bdist_wheel --universal upload
 
 test:
 	@py.test tests/
@@ -34,5 +35,5 @@ clean:
 
 clean-vendor:
 	@echo -n "Cleaning up vendor files..."
-	@rm -rf vendor/*
+	@rm -rf vendor/*.tar.gz avro jansson snappy zlib
 	@echo "Done"

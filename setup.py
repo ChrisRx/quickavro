@@ -3,8 +3,12 @@
 import os
 import sys
 import re
+import tarfile
 from setuptools import setup, Extension, find_packages
 from distutils.ccompiler import new_compiler
+
+import pypandoc
+import requests
 
 
 STATIC_BUILD_DIR = "build/static"
@@ -15,12 +19,71 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
+def download_file(url, path):
+    with open(path, 'wb') as f:
+        r = requests.get(url)
+        if r.status_code != 200:
+            raise Exception("{}: {}".format(r.status_code, r.text))
+        f.write(r.content)
+    return path
+
+def rename_dir(files, name):
+    if name is None:
+        return files
+    for f in files:
+        if '/' not in f.path:
+            continue
+        parts = f.path.split('/', 1)
+        f.path = "/".join([name, *parts[1:]])
+    return files
+
+def untar(path, strip=None):
+    with tarfile.open(path) as tar:
+        tar.extractall("vendor", rename_dir(tar.getmembers(), strip))
+
 def get_version():
     version_regex = re.compile(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', re.MULTILINE)
     with open('quickavro/__init__.py', 'r') as f:
         return version_regex.search(f.read()).group(1)
 
+source_files = [
+    {
+        "name": "Avro C",
+        "version": "1.8.0",
+        "url": "https://github.com/apache/avro/archive/release-{0}.tar.gz",
+        "dir": "avro",
+        "filename": "avro-{0}.tar.gz"
+    },
+    {
+        "name": "Jansson",
+        "version": "2.7",
+        "url": "https://github.com/akheron/jansson/archive/v{0}.tar.gz",
+        "dir": "jansson",
+        "filename": "jansson-{0}.tar.gz"
+    },
+    {
+        "name": "Snappy",
+        "version": "1.1.3",
+        "url": "https://github.com/google/snappy/releases/download/{0}/snappy-{0}.tar.gz",
+        "dir": "snappy",
+        "filename": "snappy-{0}.tar.gz"
+    },
+    {
+        "name": "zlib",
+        "version": "1.2.8",
+        "url": "https://github.com/madler/zlib/archive/v{0}.tar.gz",
+        "dir": "zlib",
+        "filename": "zlib-{0}.tar.gz"
+    }
+]
+
 def compile_vendor_static(static_build_dir, static_lib_name):
+    for f in source_files:
+        print(f)
+        url = f["url"].format(f["version"])
+        filename = f["filename"].format(f["version"])
+        target_path = "vendor/{0}".format(filename)
+        untar(download_file(url, target_path), strip=f["dir"])
     c = new_compiler()
     include_dirs = [ 
         #'vendor/zlib',
@@ -217,7 +280,7 @@ if __name__ == '__main__':
         name="quickavro",
         version=get_version(),
         description="Very fast Avro library for Python.",
-        long_description=open("README.md").read(),
+        long_description=pypandoc.convert("README.md", "rst"),
         author="Chris Marshall",
         license="Apache 2.0",
         url="https://github.com/ChrisRx/quickavro",
@@ -238,6 +301,7 @@ if __name__ == '__main__':
         },
         setup_requires=[
             "pytest-runner",
+            "pypandoc"
         ],
         tests_require=[
             "pytest>=2.8.7",
