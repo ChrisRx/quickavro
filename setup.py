@@ -18,6 +18,9 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
+def pip_install(package):
+    pip.main(['install', package])
+
 def download_file(url, path):
     try:
         import requests
