@@ -7,7 +7,6 @@ import tarfile
 from setuptools import setup, Extension, find_packages
 from distutils.ccompiler import new_compiler
 
-import pypandoc
 import requests
 
 
@@ -280,7 +279,7 @@ if __name__ == '__main__':
         name="quickavro",
         version=get_version(),
         description="Very fast Avro library for Python.",
-        long_description=pypandoc.convert("README.md", "rst"),
+        #long_description=pypandoc.convert("README.md", "rst"),
         author="Chris Marshall",
         license="Apache 2.0",
         url="https://github.com/ChrisRx/quickavro",
@@ -296,12 +295,12 @@ if __name__ == '__main__':
         zip_safe=False,
         package_dir={'quickavro': 'quickavro'},
         install_requires=[
+            "requests"
         ],
         extras_require={
         },
         setup_requires=[
-            "pytest-runner",
-            "pypandoc"
+            "pytest-runner"
         ],
         tests_require=[
             "pytest>=2.8.7",
