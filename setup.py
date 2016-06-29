@@ -17,6 +17,7 @@ def touch(fname, times=None):
         os.utime(fname, times)
 
 def download_file(url, path):
+    import requests
     with open(path, 'wb') as f:
         r = requests.get(url)
         if r.status_code != 200:
@@ -75,7 +76,6 @@ source_files = [
 ]
 
 def download_source_files():
-    import requests
     for f in source_files:
         url = f["url"].format(f["version"])
         filename = f["filename"].format(f["version"])
