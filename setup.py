@@ -7,8 +7,6 @@ import tarfile
 from setuptools import setup, Extension, find_packages
 from distutils.ccompiler import new_compiler
 
-import requests
-
 
 STATIC_BUILD_DIR = "build/static"
 STATIC_LIB_NAME = "quickavro"
