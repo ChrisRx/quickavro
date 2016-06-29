@@ -26,6 +26,10 @@ def download_file(url, path):
         import requests
     except ImportError:
         pip_install('requests')
+        try:
+            import requests
+        except ImportError:
+            sys.stderr.write("Unable to download setup dependencies\n")
     if not os.path.isdir("vendor"):
         os.mkdir("vendor")
     with open(path, 'wb') as f:
