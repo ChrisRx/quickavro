@@ -34,7 +34,7 @@ def rename_dir(files, name):
         if '/' not in f.path:
             continue
         parts = f.path.split('/', 1)
-        f.path = "/".join([name, *parts[1:]])
+        f.path = "/".join([name, parts[1]])
     return files
 
 def untar(path, strip=None):
@@ -78,12 +78,6 @@ source_files = [
 ]
 
 def compile_vendor_static(static_build_dir, static_lib_name):
-    for f in source_files:
-        print(f)
-        url = f["url"].format(f["version"])
-        filename = f["filename"].format(f["version"])
-        target_path = "vendor/{0}".format(filename)
-        untar(download_file(url, target_path), strip=f["dir"])
     c = new_compiler()
     include_dirs = [ 
         #'vendor/zlib',
@@ -273,6 +267,12 @@ def exists(path):
         return False
 
 if __name__ == '__main__':
+    if not exists("vendor/avro"):
+        for f in source_files:
+            url = f["url"].format(f["version"])
+            filename = f["filename"].format(f["version"])
+            target_path = "vendor/{0}".format(filename)
+            untar(download_file(url, target_path), strip=f["dir"])
     if not exists(STATIC_LIB):
         sys.stderr.write("Compiling vendor static library ...\n")
         compile_vendor_static(STATIC_BUILD_DIR, STATIC_LIB_NAME)
