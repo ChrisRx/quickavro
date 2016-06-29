@@ -4,6 +4,8 @@ import os
 import sys
 import re
 import tarfile
+
+import pip
 from setuptools import setup, Extension, find_packages
 from distutils.ccompiler import new_compiler
 
@@ -17,7 +19,12 @@ def touch(fname, times=None):
         os.utime(fname, times)
 
 def download_file(url, path):
-    import requests
+    try:
+        import requests
+    except ImportError:
+        pip_install('requests')
+    if not os.path.isdir("vendor"):
+        os.mkdir("vendor")
     with open(path, 'wb') as f:
         r = requests.get(url)
         if r.status_code != 200:
@@ -272,7 +279,10 @@ def exists(path):
         return False
 
 def generate_readme():
-    import pypandoc
+    try:
+        import pypandoc
+    except ImportError:
+        pip_install('pypandoc')
     pypandoc.convert("README.md", "rst"),
 
 if __name__ == '__main__':
@@ -300,9 +310,10 @@ if __name__ == '__main__':
         },
         zip_safe=False,
         package_dir={'quickavro': 'quickavro'},
+        package_data={
+            'quickavro': ['*.h']
+        },
         install_requires=[
-            "pypandoc",
-            "requests"
         ],
         extras_require={
         },
