@@ -76,6 +76,14 @@ source_files = [
     }
 ]
 
+def download_source_files():
+    import requests
+    for f in source_files:
+        url = f["url"].format(f["version"])
+        filename = f["filename"].format(f["version"])
+        target_path = "vendor/{0}".format(filename)
+        untar(download_file(url, target_path), strip=f["dir"])
+
 def compile_vendor_static(static_build_dir, static_lib_name):
     c = new_compiler()
     include_dirs = [ 
@@ -265,13 +273,13 @@ def exists(path):
     except (OSError, IOError):
         return False
 
+def generate_readme():
+    import pypandoc
+    pypandoc.convert("README.md", "rst"),
+
 if __name__ == '__main__':
     if not exists("vendor/avro"):
-        for f in source_files:
-            url = f["url"].format(f["version"])
-            filename = f["filename"].format(f["version"])
-            target_path = "vendor/{0}".format(filename)
-            untar(download_file(url, target_path), strip=f["dir"])
+        download_source_files()
     if not exists(STATIC_LIB):
         sys.stderr.write("Compiling vendor static library ...\n")
         compile_vendor_static(STATIC_BUILD_DIR, STATIC_LIB_NAME)
@@ -279,7 +287,7 @@ if __name__ == '__main__':
         name="quickavro",
         version=get_version(),
         description="Very fast Avro library for Python.",
-        #long_description=pypandoc.convert("README.md", "rst"),
+        long_description=generate_readme(),
         author="Chris Marshall",
         license="Apache 2.0",
         url="https://github.com/ChrisRx/quickavro",
@@ -295,12 +303,13 @@ if __name__ == '__main__':
         zip_safe=False,
         package_dir={'quickavro': 'quickavro'},
         install_requires=[
-            "requests"
         ],
         extras_require={
         },
         setup_requires=[
-            "pytest-runner"
+            "pytest-runner",
+            "pypandoc",
+            "requests"
         ],
         tests_require=[
             "pytest>=2.8.7",
