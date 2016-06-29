@@ -4,6 +4,8 @@ quickavro examples
 Reading an avro file
 --------------------
 
+quickavro receives the schema from Avro file header so there is no need to specify the schema when using :class:`quickavro.FileReader`.
+
 .. code-block:: python
 
     import quickavro
@@ -41,6 +43,8 @@ Writing an avro file
 
 Reading an avro file with BinaryEncoder
 ---------------------------------------
+
+The :class:`quickavro.BinaryEncoder` can also be used directly for reading and writing Avro files directly for extra flexibility.
 
 .. code-block:: python
 
@@ -136,6 +140,9 @@ Using a deflate/snappy codec
             for block in encoder.write_blocks(records):
                 f.write(block)
 
+
+Without context handling
+------------------------
 
 When not using context handling with :class:`quickavro.FileWriter`, blocks must be created manually by calling :meth:`quickavro.FileWriter.flush()` and then finally call :meth:`quickavro.FileWriter.close()` when finished:
 

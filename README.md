@@ -12,6 +12,8 @@ API documentation and examples can be found at [http://chrisrx.github.io/quickav
 $ pip install quickavro
 ```
 
+It is important to note, however, that until [PyPi allows binary wheels for linux](https://github.com/pypa/pypi-legacy/issues/120), `setup.py` will attempt to download and compile the dependencies when installing with `pip install`.
+
 # Building from source
 
 quickavro depends upon several C libraries:
@@ -19,11 +21,12 @@ quickavro depends upon several C libraries:
 * [Jansson](https://github.com/akheron/jansson)
 * [Snappy](https://github.com/google/snappy)
 
-Until [PyPi allows binary wheels](https://github.com/pypa/pypi-legacy/issues/120)
-They depend upon traditional build/config tools (cmake, autoconf, pkgconfig, etc), that sometimes make compiling this a nightmare so I ended up trying something a little different here and so far it is working well. The `vendor` make target downloads and unpacks the source files for all the libraries, while the default make target `build` calls Python setuptools/distutils to staticly compile these and creates a [Wheel](http://pythonwheels.com/) binary package. This removes the need for these libraries to be dynamically linked correctly and can trivially be packaged within the binary Wheel package without worries like if the header package has installed for the library.
+They depend upon traditional build/config tools (cmake, autoconf, pkgconfig, etc), that sometimes make compiling this a nightmare so I ended up trying something a little different here and so far it is working well.
 
 ```Shell
 make vendor
 make
 make install
 ```
+
+The `vendor` make target downloads and unpacks the source files for all the libraries, while the default make target `build`, calls Python setuptools/distutils to staticly compile these and creates a [Wheel](http://pythonwheels.com/) binary package. This removes the need for these libraries to be dynamically linked correctly and can trivially be packaged within the binary Wheel package without worries like if the header package has installed for the library.
