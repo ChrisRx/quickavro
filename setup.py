@@ -301,13 +301,13 @@ if __name__ == '__main__':
         zip_safe=False,
         package_dir={'quickavro': 'quickavro'},
         install_requires=[
+            "pypandoc",
+            "requests"
         ],
         extras_require={
         },
         setup_requires=[
             "pytest-runner",
-            "pypandoc",
-            "requests"
         ],
         tests_require=[
             "pytest>=2.8.7",
