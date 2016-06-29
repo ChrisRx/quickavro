@@ -307,8 +307,11 @@ if __name__ == '__main__':
         zip_safe=False,
         package_dir={'quickavro': 'quickavro'},
         package_data={
-            'quickavro': ['*.h', 'docs/README.rst']
+            'quickavro': ['src/*.h', 'docs/README.rst']
         },
+        data_files=[
+            ('docs', ['README.rst']),
+        ],
         install_requires=[
         ],
         extras_require={
