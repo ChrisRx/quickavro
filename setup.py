@@ -281,13 +281,6 @@ def exists(path):
     except (OSError, IOError):
         return False
 
-def generate_readme():
-    try:
-        import pypandoc
-    except ImportError:
-        pip_install('pypandoc')
-    pypandoc.convert("README.md", "rst"),
-
 if __name__ == '__main__':
     if not exists("vendor/avro"):
         download_source_files()
@@ -298,7 +291,7 @@ if __name__ == '__main__':
         name="quickavro",
         version=get_version(),
         description="Very fast Avro library for Python.",
-        long_description=generate_readme(),
+        long_description=open("docs/README.rst").read(),
         author="Chris Marshall",
         license="Apache 2.0",
         url="https://github.com/ChrisRx/quickavro",
@@ -314,7 +307,7 @@ if __name__ == '__main__':
         zip_safe=False,
         package_dir={'quickavro': 'quickavro'},
         package_data={
-            'quickavro': ['*.h']
+            'quickavro': ['*.h', 'docs/README.rst']
         },
         install_requires=[
         ],
