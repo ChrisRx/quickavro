@@ -45,6 +45,7 @@ static const tabledef p2a[] = {
 int avro_error(int rval);
 int python_to_avro(PyObject* obj, avro_value_t* value);
 PyObject* avro_to_python(avro_value_t* value);
+int validate(PyObject* obj, avro_schema_t schema);
 
 #ifdef __cplusplus
 }

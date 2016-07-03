@@ -302,26 +302,106 @@ static int python_to_record(PyObject* obj, avro_value_t* value) {
 }
 
 static int python_to_union(PyObject* obj, avro_value_t* value) {
-    // Probably not the most efficient way but handling unions this
-    // way for now with a lookup table on PyTypeObject->tp_name
     int branch_index;
     avro_value_t branch;
-    avro_schema_t schema = avro_value_get_schema(value);
+    avro_schema_t schema;
+    avro_schema_t branch_schema;
     const char* name;
-    // Will need to do type checks to ensure there are no segfaults
-    if (strcmp(Py_TYPE(obj)->tp_name, "enum") == 0) {
-        PyObject* n = PyObject_GetAttrString(obj, "name");
-        name = PyUnicode_AsUTF8(n);
+
+    schema = avro_value_get_schema(value);
+
+    if (PyDict_Check(obj)) {
+        branch_index = validate(obj, schema);
+    } else if (_PyUnicode_CheckExact(obj)) {
+        branch_index = validate(obj, schema);
+    } else if (_PyLong_Check(obj)) {
+        branch_index = validate(obj, schema);
     } else {
-        name = lookup(Py_TYPE(obj)->tp_name);
-    }
-    avro_schema_t branch_schema = avro_schema_union_branch_by_name(schema, &branch_index, name);
-    if (branch_schema == NULL) {
-        printf("Couldn't find the union branch\n");
-        return -1;
+        if (strcmp(Py_TYPE(obj)->tp_name, "enum") == 0) {
+            PyObject* n = PyObject_GetAttrString(obj, "name");
+            name = PyUnicode_AsUTF8(n);
+        } else if (obj == Py_None) {
+            name = "null";
+        } else {
+            name = lookup(Py_TYPE(obj)->tp_name);
+        }
+
+        branch_schema = avro_schema_union_branch_by_name(schema, &branch_index, name);
+        if (branch_schema == NULL) {
+            return -1;
+        }
     }
     avro_value_set_branch(value, branch_index, &branch);
     return python_to_avro(obj, &branch);
+}
+
+static int validate_enum(PyObject* obj, avro_schema_t schema) {
+    const char* symbol_name;
+    if (PyUnicode_Check(obj)) {
+        symbol_name = PyUnicode_AsUTF8(obj);
+    } else if (_PyLong_Check(obj)) {
+        symbol_name = avro_schema_enum_get(schema, PyLong_AsLong(obj));
+    } else {
+        PyObject* s = PyObject_GetAttrString(obj, "value");
+        symbol_name = PyUnicode_AsUTF8(obj);
+        Py_DECREF(s);
+    }
+    return avro_schema_enum_get_by_name(schema, symbol_name);
+}
+
+static int validate_map(PyObject* obj, avro_schema_t schema) {
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    avro_schema_t subschema;
+
+    if (!PyDict_Check(obj)) {
+        return -1;
+    }
+
+    subschema = avro_schema_map_values(schema);
+
+    while (PyDict_Next(obj, &pos, &key, &value)) {
+        if (PyUnicode_CheckExact(key) || validate(value, subschema) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int validate_record(PyObject* obj, avro_schema_t schema) {
+    size_t record_size;
+    size_t i;
+    PyObject* v;
+    avro_schema_t subschema;
+
+    if (!PyDict_Check(obj)) {
+        return -1;
+    }
+
+    record_size = avro_schema_record_size(schema);
+    for (i = 0; i < record_size; i++) {
+        v = PyDict_GetItemString(obj, avro_schema_record_field_name(schema, i));
+        if (v == NULL) {
+            v = Py_None;
+        }
+        subschema = avro_schema_record_field_get_by_index(schema, i);
+        if (validate(v, subschema) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+static int validate_union(PyObject* obj, avro_schema_t schema) {
+    size_t union_size;
+    size_t i;
+    union_size = avro_schema_union_size(schema);
+    for (i = 0; i < union_size; i++) {
+        if (validate(obj, avro_schema_union_branch(schema, i)) >= 0) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 PyObject* avro_to_python(avro_value_t* value) {
@@ -408,4 +488,38 @@ int python_to_avro(PyObject* obj, avro_value_t* value) {
             fprintf(stderr, "Unhandled Type: %d\n", value_type);
     }
     return 0;
+}
+
+int validate(PyObject* obj, avro_schema_t schema) {
+    switch(schema->type) {
+        case AVRO_STRING:
+            return _PyUnicode_CheckExact(obj) ? 0 : -1;
+        case AVRO_BYTES:
+            return PyBytes_Check(obj) ? 0 : -1;
+        case AVRO_INT32:
+        case AVRO_INT64:
+            return _PyLong_Check(obj) ? 0 : -1;
+        case AVRO_FLOAT:
+        case AVRO_DOUBLE:
+            return (_PyLong_Check(obj) || PyFloat_Check(obj)) ? 0 : -1;
+        case AVRO_BOOLEAN:
+            return PyBool_Check(obj) ? 0 : -1;
+        case AVRO_NULL:
+            return obj == Py_None ? 0 : -1;
+        case AVRO_RECORD:
+            return validate_record(obj, schema);
+        case AVRO_ENUM:
+            return validate_enum(obj, schema);
+        case AVRO_FIXED:
+            return _PyUnicode_CheckExact(obj) ? 0 : -1;
+        case AVRO_MAP:
+            return validate_map(obj, schema);
+        case AVRO_ARRAY:
+            return validate_array(obj, schema);
+        case AVRO_UNION:
+            return validate_union(obj, schema);
+        case AVRO_LINK:
+        default:
+            return -1;
+    }
 }

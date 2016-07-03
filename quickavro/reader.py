@@ -77,7 +77,7 @@ class FileReader(BinaryEncoder):
                 break
 
     def read_header(self):
-        header, offset = read_header(self.f.read(2048))
+        header, offset = read_header(self.f.read(INITIAL_HEADER_SIZE))
         self.f.seek(offset)
         return header
 

@@ -26,7 +26,7 @@ extern "C" {
 #define MAX_VARINT_SIZE 10
 
 // Initial write buffer
-#define INITIAL_BUFFER_SIZE 1024 * 8
+#define INITIAL_BUFFER_SIZE 8 * 1024 * 1024
 
 
 #ifdef __cplusplus
