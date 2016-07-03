@@ -335,6 +335,21 @@ static int python_to_union(PyObject* obj, avro_value_t* value) {
     return python_to_avro(obj, &branch);
 }
 
+static int validate_array(PyObject* obj, avro_schema_t schema) {
+    avro_schema_t subschema;
+    Py_ssize_t i;
+    if (!PyList_Check(obj)) {
+        return -1;
+    }
+    subschema = avro_schema_array_items(schema);
+    for (i = 0; i < PyList_GET_SIZE(obj); i++) {
+        if (validate(PyList_GET_ITEM(obj, i), subschema) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 static int validate_enum(PyObject* obj, avro_schema_t schema) {
     const char* symbol_name;
     if (PyUnicode_Check(obj)) {
