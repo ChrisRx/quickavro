@@ -70,6 +70,7 @@ static PyObject* double_to_pyfloat(avro_value_t* value) {
 }
 
 static PyObject* enum_to_pystring(avro_value_t* value) {
+    // TODO: Return quickavro enum object
     int index;
     avro_value_get_enum(value, &index);
     avro_schema_t schema = avro_value_get_schema(value);
@@ -217,17 +218,19 @@ static int pynone_to_null(PyObject* obj, avro_value_t* value) {
 }
 
 static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
-    // Could be more efficient. Should figure out something better
-    // for passing in the schema possibly. Should also be able to
-    // pass in just the index also.
-    // if (!strcmp(Py_TYPE(obj)->tp_name == "enum")) {
-    //     PyErr_SetString();
-    //     return NULL;
-    // }
+    int index;
+    const char* symbol_name;
     avro_schema_t schema = avro_value_get_schema(value);
-    PyObject* s = PyObject_GetAttrString(obj, "value");
-    const char* symbol_name = PyUnicode_AsUTF8(s);
-    int index = avro_schema_enum_get_by_name(schema, symbol_name);
+    if (PyUnicode_Check(obj)) {
+        symbol_name = PyUnicode_AsUTF8(obj);
+    } else if (_PyLong_Check(obj)) {
+        symbol_name = avro_schema_enum_get(schema, PyLong_AsLong(obj));
+    } else {
+        PyObject* s = PyObject_GetAttrString(obj, "value");
+        symbol_name = PyUnicode_AsUTF8(s);
+        Py_DECREF(s);
+    }
+    index = avro_schema_enum_get_by_name(schema, symbol_name);
     return avro_error(avro_value_set_enum(value, index));
 }
 

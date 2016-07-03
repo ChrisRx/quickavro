@@ -165,7 +165,7 @@ static PyObject* Encoder_write(Encoder* self, PyObject* args) {
     while (rval == ENOSPC) {
         new_size = self->buffer_length * 2;
         self->buffer = (char*)avro_realloc(self->buffer, self->buffer_length, new_size);
-        if (self->buffer) {
+        if (!self->buffer) {
             PyErr_NoMemory();
             return NULL;
         }

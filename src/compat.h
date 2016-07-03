@@ -39,10 +39,12 @@
   #define MOD_ERROR_VAL NULL
 
   #define TEXT_T Py_UNICODE
+  #define _PyLong_Check(ob) PyLong_Check(ob)
 #else
   #define PyUnicode_AsUTF8 PyString_AsString
   #define PyNumber_FloorDivide PyNumber_Divide
   #define PyBytes_FromStringAndSize PyString_FromStringAndSize
+  #define _PyLong_Check(ob) PyLong_Check(ob) || PyInt_Check(ob)
 
   #define MOD_ERROR_VAL
   #define MOD_SUCCESS_VAL(val)

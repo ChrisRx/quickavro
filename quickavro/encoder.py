@@ -165,6 +165,8 @@ class BinaryEncoder(Encoder):
             yield self.write_block()
 
     def write_record(self, record):
+        # Ensure schema is set before allowing write_record
+        self.schema
         record = self.write(record)
         self.block_size += len(record)
         self.block.append(record)
