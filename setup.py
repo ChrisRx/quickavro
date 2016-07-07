@@ -8,129 +8,8 @@ import glob
 
 import pip
 from setuptools import setup, Extension, find_packages
-from distutils.ccompiler import new_compiler
 
-
-STATIC_BUILD_DIR = "build/static"
-STATIC_LIB_NAME = "quickavro"
-STATIC_LIB = "{0}/lib{1}.a".format(STATIC_BUILD_DIR, STATIC_LIB_NAME)
-
-
-def touch(fname, times=None):
-    with open(fname, 'a'):
-        os.utime(fname, times)
-
-def pip_install(package):
-    pip.main(['install', package])
-
-def download_file(url, path):
-    try:
-        import requests
-    except ImportError:
-        pip_install('requests')
-        try:
-            import requests
-        except ImportError:
-            sys.stderr.write("Unable to download setup dependencies\n")
-    if not os.path.isdir("vendor"):
-        os.mkdir("vendor")
-    with open(path, 'wb') as f:
-        r = requests.get(url)
-        if r.status_code != 200:
-            raise Exception("{}: {}".format(r.status_code, r.text))
-        f.write(r.content)
-    return path
-
-def exists(path):
-    try:
-        with open(path):
-            return True
-    except (OSError, IOError):
-        return False
-
-def rename_dir(files, name):
-    if name is None:
-        return files
-    for f in files:
-        if '/' not in f.path:
-            continue
-        parts = f.path.split('/', 1)
-        f.path = "/".join([name, parts[1]])
-    return files
-
-def untar(path, strip=None):
-    with tarfile.open(path) as tar:
-        tar.extractall("vendor", rename_dir(tar.getmembers(), strip))
-
-def get_version():
-    version_regex = re.compile(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', re.MULTILINE)
-    with open('quickavro/__init__.py', 'r') as f:
-        return version_regex.search(f.read()).group(1)
-
-
-class StaticCompiler(object):
-    name = None
-    version = None
-    url = None
-    target = None
-    filename = None
-
-    include_dirs = []
-    source_dir = None
-    excluded = []
-    sources = []
-    depends = []
-
-    extra_compile_args = []
-
-    def __init__(self):
-        self.c = new_compiler()
-        self.default_compile_args = ['-O3', '-fPIC', '-g', '-Wall', '-Wfatal-errors']
-
-    def compile(self, force=False):
-        if exists(os.path.join(STATIC_BUILD_DIR, self.static_lib_name)) and not force:
-            return
-        sys.stderr.write("Compiling {0} to static library ...\n".format(self.name))
-        sys.stderr.write("="*32)
-        sys.stderr.write("\n")
-        self.sources = [
-            *glob.glob("{0}/*.c".format(self.source_dir)),
-            *glob.glob("{0}/*.cc".format(self.source_dir)),
-        ]
-        self.depends = [
-            *glob.glob("{0}/*.h".format(self.source_dir)),
-            *glob.glob("{0}/*/*.h".format(self.source_dir))
-        ]
-        for exclude in self.excluded:
-            matches = [s for s in self.sources if exclude in s]
-            if matches:
-                for match in matches:
-                    self.sources.remove(match)
-        objs = self.c.compile(self.sources,
-            include_dirs=self.include_dirs,
-            extra_preargs=self.default_compile_args + self.extra_compile_args,
-            depends=self.depends
-        )
-
-        self.c.create_static_lib(objs, self.target, output_dir=STATIC_BUILD_DIR)
-        sys.stderr.write("\n")
-
-    def download(self, force=False):
-        if exists("vendor/{0}".format(self.filename)) and not force:
-            return
-        sys.stderr.write("Downloading {0} ...\n".format(self.name))
-        sys.stderr.write("="*32)
-        sys.stderr.write("\n")
-        untar(download_file(self.url, "vendor/{0}".format(self.filename)), strip=self.target)
-        sys.stderr.write("Downloaded successfully -> vendor/{0}\n\n".format(self.filename))
-
-    @property
-    def static_lib_name(self):
-        return "lib{0}.a".format(self.target)
-
-    @property
-    def static_library(self):
-        return os.path.join(STATIC_BUILD_DIR, self.static_lib_name)
+from setup_utils import *
 
 
 class Jansson(StaticCompiler):
@@ -141,61 +20,99 @@ class Jansson(StaticCompiler):
     filename = "jansson-{0}.tar.gz".format(version)
 
     include_dirs = [
-        'vendor/jansson',
-        'vendor/jansson/src',
+        'vendor/jansson-{0}'.format(version),
+        'vendor/jansson-{0}/src'.format(version),
     ]
-    source_dir = "vendor/jansson/src"
-
+    source_dir = "vendor/jansson-{0}/src".format(version)
     extra_compile_args = ['-DHAVE_STDINT_H', '-DJSON_INLINE=inline']
-    touch(os.path.join(source_dir, "jansson_config.h"))
+
+    def setup(self):
+        try:
+            touch(os.path.join(self.source_dir, "jansson_config.h"))
+        except FileNotFoundError as error:
+            pass
 
 
 class Snappy(StaticCompiler):
     name = "Snappy"
-    version = "1.1.3"
-    url = "https://github.com/google/snappy/releases/download/{0}/snappy-{0}.tar.gz".format(version)
-    target = "snappy"
-    filename = "snappy-{0}.tar.gz".format(version)
+    if WIN:
+        version = "1.1.1.8"
+        url = "https://github.com/kiddlu/snappy-windows/archive/master.tar.gz"
+        filename = "snappy-windows-{0}.tar.gz".format(version)
 
-    include_dirs = [
-        'vendor/snappy',
-    ]
-    source_dir = "vendor/snappy"
+        include_dirs = [
+            'vendor/snappy-windows-{0}/src'.format(version),
+        ]
+        source_dir = "vendor/snappy-windows-{0}/src".format(version)
+    else:
+        version = "1.1.3"
+        url = "https://github.com/google/snappy/releases/download/{0}/snappy-{0}.tar.gz".format(version)
+        filename = "snappy-{0}.tar.gz".format(version)
+
+        include_dirs = [
+            'vendor/snappy-{0}/src'.format(version),
+        ]
+        source_dir = "vendor/snappy-{0}/src".format(version)
+
     excluded = [
         "snappy-test.cc",
         "snappy_unittest.cc",
     ]
+    extra_compile_args = ['-DSNAPPY_STATIC']
 
 
 class AvroC(StaticCompiler):
-    name = "Avro C"
+    name = "Avro"
     version = "1.8.0"
     url = "https://github.com/apache/avro/archive/release-{0}.tar.gz".format(version)
-    target = "avro"
     filename = "avro-{0}.tar.gz".format(version)
 
     include_dirs = [
-        'vendor/avro/lang/c/src',
-        'vendor/avro/lang/c/src/avro'
+        *Jansson.include_dirs,
+        'vendor/avro-release-{0}/lang/c/src'.format(version),
+        'vendor/avro-release-{0}/lang/c/src/avro'.format(version)
     ]
-    source_dir = "vendor/avro/lang/c/src"
-
+    source_dir = "vendor/avro-release-{0}/lang/c/src".format(version)
     excluded = [
         "schema_specific.c",
+        "avroappend.c",
+        "avrocat.c",
+        "avromod.c",
+        "avropipe.c",
     ]
+    extra_compile_args = ['-DJSON_INLINE=inline']
 
+    def setup(self):
+        filename = "{0}/avro_private.h".format(self.source_dir)
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+        try:
+            n = lines.index('#define snprintf _snprintf\n')
+            if "_WIN32" in lines[n-1]:
+                lines[n-1] = "#if _MSC_VER < 1900\n"
+                with open(filename, 'w') as f:
+                    f.write("".join(lines))
+                print("Successfully patched '{0}'.".format(filename))
+        except ValueError as error:
+            pass
 
 def compile_ext():
     force = True if '--force' in sys.argv else False
     libs = [Snappy(), Jansson(), AvroC()]
+    # libs = [Snappy()]
+    # libs = [AvroC()]
     for lib in libs:
         lib.download()
+        lib.extract()
         lib.compile(force)
+    # sys.exit()
     include_dirs = [
         os.path.join(os.getcwd(), "src"),
     ]
-    libraries = ['stdc++']
+    libraries = []
     library_dirs = []
+    macros = []
+    extra_compile_args = []
     sources = [
         'src/convert.c',
         'src/encoderobject.c',
@@ -211,10 +128,14 @@ def compile_ext():
     ]
     for lib in libs:
         include_dirs += lib.include_dirs
-    extra_compile_args = ['-Wfatal-errors']
-    linker_flags = ['-shared', '-Wl,--export-dynamic']
-
-    macros = []
+    if WIN:
+        macros.append(('_WIN32', 1))
+        macros.append(('SNAPPY_STATIC', 1))
+    else:
+        libraries.append('stdc++')
+        extra_compile_args.append('-Wfatal-errors')
+        linker_flags.append('-shared')
+        linker_flags.append('-Wl,--export-dynamic')
     return Extension(
         "_quickavro",
         language="c",
@@ -260,7 +181,7 @@ if __name__ == '__main__':
             "pytest>=2.8.7",
         ],
         classifiers=[
-            'Development Status :: 5 - Production/Stable',
+            'Development Status :: 4 - Beta',
             'Intended Audience :: Developers',
             'License :: OSI Approved :: Apache Software License',
             'Natural Language :: English',
