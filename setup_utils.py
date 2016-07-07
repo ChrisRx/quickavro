@@ -266,12 +266,12 @@ class StaticCompiler(object):
         sys.stderr.write("\n")
         download_file(self.url, "vendor/{0}".format(self.filename))
         sys.stderr.write("Downloaded successfully -> vendor/{0}\n\n".format(self.filename))
-        self.setup()
 
     def extract(self, force=False):
         if exists(self.source_dir):
             return
         untar("vendor/{0}".format(self.filename))
+        self.setup()
 
     def setup(self):
         pass

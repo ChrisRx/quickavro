@@ -35,5 +35,5 @@ clean:
 
 clean-vendor:
 	@echo -n "Cleaning up vendor files..."
-	@rm -rf vendor/*.tar.gz avro jansson snappy zlib
+	@rm -rf vendor/*.tar.gz vendor/avro-*/ vendor/jansson-*/ vendor/snappy-*/
 	@echo "Done"

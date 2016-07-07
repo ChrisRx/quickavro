@@ -41,9 +41,9 @@ class Snappy(StaticCompiler):
         filename = "snappy-windows-{0}.tar.gz".format(version)
 
         include_dirs = [
-            'vendor/snappy-windows-{0}/src'.format(version),
+            'vendor/snappy-windows-master/src',
         ]
-        source_dir = "vendor/snappy-windows-{0}/src".format(version)
+        source_dir = "vendor/snappy-windows-master/src"
     else:
         version = "1.1.3"
         url = "https://github.com/google/snappy/releases/download/{0}/snappy-{0}.tar.gz".format(version)
@@ -84,16 +84,19 @@ class AvroC(StaticCompiler):
 
     def setup(self):
         filename = "{0}/avro_private.h".format(self.source_dir)
-        with open(filename, 'r') as f:
-            lines = f.readlines()
         try:
-            n = lines.index('#define snprintf _snprintf\n')
-            if "_WIN32" in lines[n-1]:
-                lines[n-1] = "#if _MSC_VER < 1900\n"
-                with open(filename, 'w') as f:
-                    f.write("".join(lines))
-                print("Successfully patched '{0}'.".format(filename))
-        except ValueError as error:
+            with open(filename, 'r') as f:
+                lines = f.readlines()
+            try:
+                n = lines.index('#define snprintf _snprintf\n')
+                if "_WIN32" in lines[n-1]:
+                    lines[n-1] = "#if _MSC_VER < 1900\n"
+                    with open(filename, 'w') as f:
+                        f.write("".join(lines))
+                    print("Successfully patched '{0}'.".format(filename))
+            except ValueError as error:
+                pass
+        except FileNotFoundError as error:
             pass
 
 def compile_ext():
