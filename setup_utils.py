@@ -23,7 +23,7 @@ else:
 
 
 def fix_compile():
-    import distutils._msvccompiler
+    import distutils.msvccompiler
     def _fix_compile(self, sources, output_dir=None, macros=None, include_dirs=None, debug=0,
                 extra_preargs=None, extra_postargs=None, depends=None):
 
@@ -111,7 +111,7 @@ def fix_compile():
 
         return objects
 
-    distutils._msvccompiler.MSVCCompiler.compile = _fix_compile
+    distutils.msvccompiler.MSVCCompiler.compile = _fix_compile
 
 fix_compile()
 
