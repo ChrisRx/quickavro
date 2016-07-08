@@ -243,14 +243,14 @@ class StaticCompiler(object):
         sys.stderr.write("\n")
         download_file(self.url, "vendor/{0}".format(self.filename))
         sys.stderr.write("Downloaded successfully -> vendor/{0}\n\n".format(self.filename))
-        if WIN:
-            download_file("http://www.azillionmonkeys.com/qed/pstdint.h", os.path.join(self.source_dir, "stdint.h"))
-            sys.stderr.write("Downloaded stdint.h -> {0}\n\n".format(self.source_dir))
 
     def extract(self, force=False):
         if exists(self.source_dir):
             return
         untar("vendor/{0}".format(self.filename))
+        if WIN:
+            download_file("http://www.azillionmonkeys.com/qed/pstdint.h", os.path.join(self.source_dir, "stdint.h"))
+            sys.stderr.write("Downloaded stdint.h -> {0}\n\n".format(self.source_dir))
         self.setup()
 
     def setup(self):
