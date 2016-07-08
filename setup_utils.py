@@ -188,6 +188,7 @@ class StaticCompiler(object):
     excluded = []
     sources = []
     depends = []
+    libraries = []
 
     extra_compile_args = []
 
@@ -231,9 +232,14 @@ class StaticCompiler(object):
             extra_preargs=self.default_compile_args + self.extra_compile_args,
             depends=self.depends
         )
+        if self.libraries:
+            for lib in self.libraries:
+                o = glob.glob("{0}/*.o".format(lib.source_dir))
+                objs.extend(o)
 
         self.c.create_static_lib(objs, self.name.lower(), output_dir=STATIC_BUILD_DIR)
         sys.stderr.write("\n")
+        return objs
 
     def download(self, force=False):
         if exists("vendor/{0}".format(self.filename)) and not force:

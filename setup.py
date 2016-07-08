@@ -21,7 +21,6 @@ class Jansson(StaticCompiler):
     name = "Jansson"
     version = "2.7"
     url = "https://github.com/akheron/jansson/archive/v{0}.tar.gz".format(version)
-    target = "jansson"
     filename = "jansson-{0}.tar.gz".format(version)
 
     include_dirs = [
@@ -77,7 +76,7 @@ class AvroC(StaticCompiler):
         'vendor/avro-release-{0}/lang/c/src/avro'.format(version)
     ]
     include_dirs.extend(Jansson.include_dirs)
-
+    libraries = [Jansson]
     source_dir = "vendor/avro-release-{0}/lang/c/src".format(version)
     excluded = [
         "schema_specific.c",
@@ -86,7 +85,7 @@ class AvroC(StaticCompiler):
         "avromod.c",
         "avropipe.c",
     ]
-    extra_compile_args = ['-DJSON_INLINE=inline']
+    extra_compile_args = ['-DHAVE_STDINT_H', '-DJSON_INLINE=inline']
 
     def setup(self):
         filename = "{0}/avro_private.h".format(self.source_dir)
@@ -96,7 +95,7 @@ class AvroC(StaticCompiler):
             try:
                 n = lines.index('#define snprintf _snprintf\n')
                 if "_WIN32" in lines[n-1]:
-                    lines[n-1] = "#if _MSC_VER < 1900\n"
+                    lines[n] = '#if _MSC_VER < 1900\n#define snprintf _snprintf\n#endif\n'
                     with open(filename, 'w') as f:
                         f.write("".join(lines))
                     print("Successfully patched '{0}'.".format(filename))
@@ -108,13 +107,10 @@ class AvroC(StaticCompiler):
 def compile_ext():
     force = True if '--force' in sys.argv else False
     libs = [Snappy(), Jansson(), AvroC()]
-    # libs = [Snappy()]
-    # libs = [AvroC()]
     for lib in libs:
         lib.download()
         lib.extract()
         lib.compile(force)
-    # sys.exit()
     include_dirs = [
         os.path.join(os.getcwd(), "src"),
     ]
