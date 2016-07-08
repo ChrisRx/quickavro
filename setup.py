@@ -11,6 +11,11 @@ from setuptools import setup, Extension, find_packages
 
 from setup_utils import *
 
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
+if not PY3:
+    FileNotFoundError = (IOError, OSError)
 
 class Jansson(StaticCompiler):
     name = "Jansson"
@@ -68,10 +73,11 @@ class AvroC(StaticCompiler):
     filename = "avro-{0}.tar.gz".format(version)
 
     include_dirs = [
-        *Jansson.include_dirs,
         'vendor/avro-release-{0}/lang/c/src'.format(version),
         'vendor/avro-release-{0}/lang/c/src/avro'.format(version)
     ]
+    include_dirs.extend(Jansson.include_dirs)
+
     source_dir = "vendor/avro-release-{0}/lang/c/src".format(version)
     excluded = [
         "schema_specific.c",

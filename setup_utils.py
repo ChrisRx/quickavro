@@ -175,28 +175,6 @@ def untar(path):
     with tarfile.open(path) as tar:
         tar.extractall("vendor", tar.getmembers())
 
-def un7zip(path):
-    import py7zlib
-    with open(path, 'rb') as f:
-        archive = py7zlib.Archive7z(f)
-        # names = archive.getmembers()
-        names = archive.filenames
-        for filename in names:
-            print(filename)
-            # outfilename = os.path.join("vendor", name)
-            # outdir = os.path.dirname(outfilename)
-            if not os.path.exists(os.path.dirname(filename)):
-                os.makedirs(os.path.dirname(filename))
-            with open(filename, 'wb') as outfile:
-                obj = archive.getmember(filename)
-                # print("Compressed: {0}".format(obj.compressed))
-                try:
-                    data = obj.read()
-                    outfile.write(data)
-                except Exception as error:
-                    print(error)
-                    
-
 
 class StaticCompiler(object):
     name = None
@@ -237,13 +215,12 @@ class StaticCompiler(object):
         sys.stderr.write("Compiling {0} to static library ...\n".format(self.name))
         sys.stderr.write("="*32)
         sys.stderr.write("\n")
-        self.sources = [
-            *glob.glob("{0}/*.c".format(self.source_dir)),
-            *glob.glob("{0}/*.cc".format(self.source_dir)),
-        ]
-        self.depends = [
-            *glob.glob("{0}/*.h".format(self.source_dir)),
-        ]
+        self.sources = []
+        for ext in {'c', 'cc'}:
+            self.sources.extend(glob.glob("{0}/*.{1}".format(self.source_dir, ext)))
+        self.depends = []
+        for ext in {'h', 'hpp'}:
+            self.depends.extend(glob.glob("{0}/*.{1}".format(self.source_dir, ext)))
         for exclude in self.excluded:
             matches = [s for s in self.sources if exclude in s]
             if matches:
