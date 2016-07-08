@@ -35,6 +35,10 @@ class Jansson(StaticCompiler):
             touch(os.path.join(self.source_dir, "jansson_config.h"))
         except FileNotFoundError as error:
             pass
+        if WIN and PY2:
+            filename = "{0}/utf.h".format(self.source_dir)
+            diff = [(16, "#include <stdint.h>\n", "#include <pstdint.h>\n")]
+            patch(filename, diff)
 
 
 class Snappy(StaticCompiler):
@@ -89,20 +93,9 @@ class AvroC(StaticCompiler):
 
     def setup(self):
         filename = "{0}/avro_private.h".format(self.source_dir)
-        try:
-            with open(filename, 'r') as f:
-                lines = f.readlines()
-            try:
-                n = lines.index('#define snprintf _snprintf\n')
-                if "_WIN32" in lines[n-1]:
-                    lines[n] = '#if _MSC_VER < 1900\n#define snprintf _snprintf\n#endif\n'
-                    with open(filename, 'w') as f:
-                        f.write("".join(lines))
-                    print("Successfully patched '{0}'.".format(filename))
-            except ValueError as error:
-                pass
-        except FileNotFoundError as error:
-            pass
+        diff = [(37, "#define snprintf _snprintf\n", "#if _MSC_VER < 1900\n#define snprintf _snprintf\n#endif\n")]
+        patch(filename, diff)
+
 
 def compile_ext():
     force = True if '--force' in sys.argv else False

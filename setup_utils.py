@@ -9,10 +9,12 @@ from distutils.ccompiler import new_compiler
 from distutils.errors import *
 
 
-__all__ = ['WIN', 'STATIC_BUILD_DIR', 'STATIC_LIB', 'STATIC_LIB_NAME', 'StaticCompiler', 'touch', 'get_version']
+__all__ = ['WIN', 'STATIC_BUILD_DIR', 'STATIC_LIB', 'STATIC_LIB_NAME', 'StaticCompiler', 'touch', 'get_version', 'patch']
 
 
 WIN = sys.platform.startswith('win')
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
 
 STATIC_BUILD_DIR = "build/static"
 STATIC_LIB_NAME = "quickavro"
@@ -152,6 +154,22 @@ def is_64bit():
     if sys.maxsize > 2**32:
         return True
     return False
+
+def patch(filename, diff):
+    try:
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+    except FileNotFoundError as error:
+        print(error)
+        return
+    for d in diff:
+        if d[1] == lines[d[0]-1]:
+            lines[d[0]-1] = d[2]
+            print("Successfully patched '{0}' line {1}.".format(filename, d[0]))
+        else:
+            print(d)
+    with open(filename, 'w') as f:
+        f.write("".join(lines))
 
 def pip_install(package):
     import pip
