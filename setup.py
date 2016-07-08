@@ -55,9 +55,9 @@ class Snappy(StaticCompiler):
         filename = "snappy-{0}.tar.gz".format(version)
 
         include_dirs = [
-            'vendor/snappy-{0}/src'.format(version),
+            'vendor/snappy-{0}'.format(version),
         ]
-        source_dir = "vendor/snappy-{0}/src".format(version)
+        source_dir = "vendor/snappy-{0}".format(version)
 
     excluded = [
         "snappy-test.cc",
