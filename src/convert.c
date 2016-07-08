@@ -40,8 +40,9 @@ static const char* lookup(const char* key) {
 static PyObject* array_to_pylist(avro_value_t* value) {
     size_t record_length;
     size_t i;
+    PyObject* l;
     avro_value_get_size(value, &record_length);
-    PyObject* l = PyList_New(record_length);
+    l = PyList_New(record_length);
     for (i=0; i<record_length; i++) {
         avro_value_t field_value;
         avro_value_get_by_index(value, i, &field_value, NULL);
@@ -72,9 +73,11 @@ static PyObject* double_to_pyfloat(avro_value_t* value) {
 static PyObject* enum_to_pystring(avro_value_t* value) {
     // TODO: Return quickavro enum object
     int index;
+    const char* name;
+    avro_schema_t schema;
     avro_value_get_enum(value, &index);
-    avro_schema_t schema = avro_value_get_schema(value);
-    const char* name = avro_schema_enum_get(schema, index);
+    schema = avro_value_get_schema(value);
+    name = avro_schema_enum_get(schema, index);
     if (name == NULL) {
         fprintf(stderr, "Enum to pystring failed.\n");
         Py_RETURN_NONE;
@@ -237,6 +240,7 @@ static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
 static int pystring_to_fixed(PyObject* obj, avro_value_t* value) {
     int status;
     char* buf;
+    int rval;
     Py_ssize_t length;
     if (PyUnicode_Check(obj)) {
         PyObject* s = PyUnicode_AsUTF8String(obj);
@@ -251,7 +255,7 @@ static int pystring_to_fixed(PyObject* obj, avro_value_t* value) {
             //
         }
     }
-    int rval = avro_error(avro_value_set_fixed(value, buf, length));
+    rval = avro_error(avro_value_set_fixed(value, buf, length));
     return rval;
 }
 
@@ -260,6 +264,7 @@ static int pystring_to_string(PyObject* obj, avro_value_t* value) {
     // Python versions before 3.3
     int status;
     char* buf;
+    int rval;
     Py_ssize_t length;
     if (PyUnicode_Check(obj)) {
         PyObject* s = PyUnicode_AsUTF8String(obj);
@@ -274,7 +279,7 @@ static int pystring_to_string(PyObject* obj, avro_value_t* value) {
             //
         }
     }
-    int rval = avro_error(avro_value_set_string_len(value, buf, length+1));
+    rval = avro_error(avro_value_set_string_len(value, buf, length+1));
     return rval;
 }
 
@@ -282,12 +287,13 @@ static int python_to_record(PyObject* obj, avro_value_t* value) {
     size_t record_length;
     size_t i;
     int rval;
+    PyObject* v;
     avro_value_get_size(value, &record_length);
     for (i=0; i<record_length; i++) {
         const char* field_name;
         avro_value_t field_value;
         avro_value_get_by_index(value, i, &field_value, &field_name);
-        PyObject* v = PyDict_GetItemString(obj, field_name);
+        v = PyDict_GetItemString(obj, field_name);
         if (v == NULL) {
             PyErr_Clear();
             v = Py_None;

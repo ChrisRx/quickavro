@@ -194,6 +194,7 @@ class StaticCompiler(object):
 
     def __init__(self):
         self.c = new_compiler()
+        self.include_dirs.append(os.path.join(os.getcwd(), "src"))
         if WIN:
             self.default_compile_args = [
                 '-D_WIN32',
@@ -254,7 +255,7 @@ class StaticCompiler(object):
         if exists(self.source_dir):
             return
         untar("vendor/{0}".format(self.filename))
-        if WIN:
+        if WIN and PY2:
             download_file("http://www.azillionmonkeys.com/qed/pstdint.h", os.path.join(self.source_dir, "stdint.h"))
             sys.stderr.write("Downloaded stdint.h -> {0}\n\n".format(self.source_dir))
         self.setup()
