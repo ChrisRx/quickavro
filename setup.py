@@ -121,6 +121,7 @@ def compile_ext():
     libraries = []
     library_dirs = []
     macros = []
+    linker_flags = []
     extra_compile_args = []
     sources = [
         'src/convert.c',
