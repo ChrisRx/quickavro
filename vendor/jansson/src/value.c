@@ -19,7 +19,7 @@
 #include <math.h>
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#include <pstdint.h>
 #endif
 
 #include "jansson.h"

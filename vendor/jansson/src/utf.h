@@ -13,7 +13,7 @@
 #endif
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#include <pstdint.h>
 #endif
 
 int utf8_encode(int32_t codepoint, char *buffer, size_t *size);

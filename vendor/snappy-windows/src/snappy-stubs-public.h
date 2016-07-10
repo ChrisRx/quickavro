@@ -1,7 +1,7 @@
 #ifndef UTIL_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
 #define UTIL_SNAPPY_OPENSOURCE_SNAPPY_STUBS_PUBLIC_H_
 
-#include <stdint.h>
+#include <pstdint.h>
 #include <stddef.h>
 
 #define SNAPPY_MAJOR 1

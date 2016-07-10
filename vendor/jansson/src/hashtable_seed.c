@@ -10,7 +10,7 @@
 #include <time.h>
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>
+#include <pstdint.h>
 #endif
 
 #ifdef HAVE_FCNTL_H

@@ -13,7 +13,7 @@
 #include <string.h>
 
 #if HAVE_STDINT_H
-#include <stdint.h>
+#include <pstdint.h>
 #endif
 
 #include <jansson_config.h>   /* for JSON_INLINE */

@@ -41,7 +41,7 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 #endif
 
 #ifdef HAVE_STDINT_H
-#include <stdint.h>     /* defines uint32_t etc */
+#include <pstdint.h>     /* defines uint32_t etc */
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
