@@ -129,6 +129,7 @@ class Jansson(StaticCompiler):
     name = "Jansson"
     version = "2.7"
     include_dirs = [
+        "vendor",
         "vendor/jansson/src",
     ]
     source_dir = "vendor/jansson/src"
@@ -140,6 +141,7 @@ class Snappy(StaticCompiler):
     if WIN:
         version = "1.1.1.8"
         include_dirs = [
+            "vendor",
             "vendor/snappy-windows/src",
         ]
         source_dir = "vendor/snappy-windows/src"
