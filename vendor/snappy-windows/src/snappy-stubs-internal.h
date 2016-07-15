@@ -47,6 +47,10 @@
 
 #include "snappy-stubs-public.h"
 
+#if defined(WIN32)
+#include <intrin.h>
+#endif
+
 #if defined(__x86_64__)
 
 // Enable 64-bit optimized versions of some routines.

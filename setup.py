@@ -133,7 +133,10 @@ class Jansson(StaticCompiler):
         "vendor/jansson/src",
     ]
     source_dir = "vendor/jansson/src"
-    extra_compile_args = ['-DHAVE_STDINT_H', '-DJSON_INLINE=inline']
+    if WIN and PY2:
+        extra_compile_args = ['-DHAVE_STDINT_H', '-DJSON_INLINE=__inline']
+    else:
+        extra_compile_args = ['-DHAVE_STDINT_H', '-DJSON_INLINE=inline']
 
 
 class Snappy(StaticCompiler):
