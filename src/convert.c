@@ -221,7 +221,7 @@ static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
     int index;
     const char* symbol_name;
     avro_schema_t schema = avro_value_get_schema(value);
-    if (PyUnicode_Check(obj)) {
+    if (_PyUnicode_CheckExact(obj)) {
         symbol_name = PyUnicode_AsUTF8(obj);
     } else if (_PyLong_Check(obj)) {
         symbol_name = avro_schema_enum_get(schema, PyLong_AsLong(obj));
