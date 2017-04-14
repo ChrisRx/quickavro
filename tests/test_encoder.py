@@ -88,9 +88,10 @@ class TestEncoder(object):
 
     def test_type_fixed(self):
         with quickavro.BinaryEncoder() as encoder:
-            encoder.schema = {"name": "test", "type": "fixed", "size": 5}
-            result = encoder.write("fixed")
-            assert result == b"fixed"
+            value = b"\x01\x02\x03\x04\x05\x06\x07\x08"
+            encoder.schema = {"name": "test", "type": "fixed", "size": len(value)}
+            result = encoder.write(value)
+            assert result == b"\x01\x02\x03\x04\x05\x06\x07\x08"
 
     def test_type_array(self):
         with quickavro.BinaryEncoder() as encoder:

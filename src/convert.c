@@ -82,7 +82,7 @@ static PyObject* enum_to_pystring(avro_value_t* value) {
     return PyUnicode_FromString(name);
 }
 
-static PyObject* fixed_to_pystring(avro_value_t* value) {
+static PyObject* fixed_to_pybytes(avro_value_t* value) {
     const void* buf;
     size_t length;
     avro_value_get_fixed(value, &buf, &length);
@@ -234,22 +234,15 @@ static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
     return avro_error(avro_value_set_enum(value, index));
 }
 
-static int pystring_to_fixed(PyObject* obj, avro_value_t* value) {
+static int pybytes_to_fixed(PyObject* obj, avro_value_t* value) {
     int status;
     char* buf;
     Py_ssize_t length;
-    if (PyUnicode_Check(obj)) {
-        PyObject* s = PyUnicode_AsUTF8String(obj);
-        status = PyBytes_AsStringAndSize(s, &buf, &length);
-        if (!status) {
-            //
-        }
-        Py_DECREF(s);
+    if (PyBytes_Check(obj)) {
+        PyBytes_AsStringAndSize(obj, &buf, &length);
     } else {
-        status = PyBytes_AsStringAndSize(obj, &buf, &length);
-        if (!status) {
-            //
-        }
+        PyErr_SetString(PyExc_Exception, "Expected bytes, given str");
+        return -1;
     }
     int rval = avro_error(avro_value_set_fixed(value, buf, length));
     return rval;
@@ -453,7 +446,7 @@ PyObject* avro_to_python(avro_value_t* value) {
         case AVRO_ENUM:
             return enum_to_pystring(value);
         case AVRO_FIXED:
-            return fixed_to_pystring(value);
+            return fixed_to_pybytes(value);
         case AVRO_MAP:
             return map_to_pydict(value);
         case AVRO_ARRAY:
@@ -491,7 +484,7 @@ int python_to_avro(PyObject* obj, avro_value_t* value) {
         case AVRO_ENUM:
             return pystring_to_enum(obj, value);
         case AVRO_FIXED:
-            return pystring_to_fixed(obj, value);
+            return pybytes_to_fixed(obj, value);
         case AVRO_MAP:
             return pydict_to_map(obj, value);
         case AVRO_ARRAY:
@@ -526,7 +519,7 @@ int validate(PyObject* obj, avro_schema_t schema) {
         case AVRO_ENUM:
             return validate_enum(obj, schema);
         case AVRO_FIXED:
-            return _PyUnicode_CheckExact(obj) ? 0 : -1;
+            return PyBytes_Check(obj) ? 0 : -1;
         case AVRO_MAP:
             return validate_map(obj, schema);
         case AVRO_ARRAY:
