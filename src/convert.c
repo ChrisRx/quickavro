@@ -527,6 +527,7 @@ int validate(PyObject* obj, avro_schema_t schema) {
         case AVRO_UNION:
             return validate_union(obj, schema);
         case AVRO_LINK:
+            return validate(obj, avro_schema_link_target(schema));
         default:
             return -1;
     }

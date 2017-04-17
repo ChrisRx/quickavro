@@ -121,4 +121,16 @@ class TestEncoder(object):
             assert result == b"\x04\x06 $*\x00"
 
     def test_type_link(self):
-        pass
+        with quickavro.BinaryEncoder() as encoder:
+            encoder.schema = {
+                "type": "record",
+                "name": "chainlink",
+                "fields": [
+                    {"name": "linkid", "type": "int"},
+                    {"name": "nextlink", "type": ["null", "chainlink"]}
+                ]
+            }
+
+            chain = {"linkid": 1, "nextlink": {"linkid": 2}}
+            result = encoder.write(chain)
+            assert result == b"\x02\x02\x04\x00"
