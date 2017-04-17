@@ -120,6 +120,16 @@ class TestEncoder(object):
             result = encoder.write({"ages": [16, 18, 21]})
             assert result == b"\x04\x06 $*\x00"
 
+    def test_type_map(self):
+        with quickavro.BinaryEncoder() as encoder:
+            encoder.schema = {
+                "type": "map",
+                "values": "string"
+            }
+            test_map = {"mykey": "myval"}
+            result = encoder.write(test_map)
+            assert result == b"\x02\nmykey\nmyval\x00"
+
     def test_type_link(self):
         with quickavro.BinaryEncoder() as encoder:
             encoder.schema = {

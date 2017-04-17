@@ -369,7 +369,7 @@ static int validate_map(PyObject* obj, avro_schema_t schema) {
     subschema = avro_schema_map_values(schema);
 
     while (PyDict_Next(obj, &pos, &key, &value)) {
-        if (PyUnicode_CheckExact(key) || validate(value, subschema) < 0) {
+        if (!_PyUnicode_CheckExact(key) || validate(value, subschema) < 0) {
             return -1;
         }
     }
