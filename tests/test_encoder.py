@@ -105,14 +105,20 @@ class TestEncoder(object):
                 "type": "record",
                 "name": "test",
                 "fields": [
-                    {"name": "age", "type": ["int", "null"]},
+                    {"name": "ages", "type": [
+                        "int",
+                        "null",
+                        {"type": "array", "items": "int"}
+                    ]},
                 ]
             }
             # encoder.schema = {"type": ["string", "null"]}
-            result = encoder.write({"age": 25})
+            result = encoder.write({"ages": 25})
             assert result == b"\x002"
-            result = encoder.write({"age": None})
+            result = encoder.write({"ages": None})
             assert result == b"\x02"
+            result = encoder.write({"ages": [16, 18, 21]})
+            assert result == b"\x04\x06 $*\x00"
 
     def test_type_link(self):
         pass
