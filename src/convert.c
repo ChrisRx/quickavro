@@ -307,6 +307,8 @@ static int python_to_union(PyObject* obj, avro_value_t* value) {
         branch_index = validate(obj, schema);
     } else if (_PyUnicode_CheckExact(obj)) {
         branch_index = validate(obj, schema);
+    } else if (PyBytes_CheckExact(obj)) {
+        branch_index = validate(obj, schema);
     } else if (_PyLong_Check(obj)) {
         branch_index = validate(obj, schema);
     } else {
