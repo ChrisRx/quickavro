@@ -76,6 +76,7 @@ class TestEncoder(object):
             assert result == b"\nLarry*"
 
     def test_type_enum(self):
+        # Test Avro enum encoding with quickavro custom Enum type
         Gender = quickavro.Enum("Gender", "F M")
             
         with quickavro.BinaryEncoder() as encoder:
@@ -84,6 +85,18 @@ class TestEncoder(object):
             result = encoder.write(Gender.F)
             assert result == b"\x00"
             result = encoder.write(Gender.M)
+            assert result == b"\x02"
+
+        # Test Avro enum encoding with string symbols matching a schema
+        with quickavro.BinaryEncoder() as encoder:
+            encoder.schema = {
+                "type": "enum",
+                "name": "Gender",
+                "symbols": ["F", "M"]
+            }
+            result = encoder.write("F")
+            assert result == b"\x00"
+            result = encoder.write("M")
             assert result == b"\x02"
 
     def test_type_fixed(self):
