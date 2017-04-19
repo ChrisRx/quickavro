@@ -347,7 +347,10 @@ static int validate_array(PyObject* obj, avro_schema_t schema) {
 
 static int validate_enum(PyObject* obj, avro_schema_t schema) {
     const char* symbol_name;
-    if (PyUnicode_Check(obj)) {
+
+    if (obj == Py_None) {
+        return -1;
+    } else if (_PyUnicode_CheckExact(obj)) {
         symbol_name = PyUnicode_AsUTF8(obj);
     } else if (_PyLong_Check(obj)) {
         symbol_name = avro_schema_enum_get(schema, PyLong_AsLong(obj));

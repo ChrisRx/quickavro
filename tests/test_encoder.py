@@ -113,16 +113,27 @@ class TestEncoder(object):
             assert result == b"\x04\ntest1\ntest2\x00"
 
     def test_type_union(self):
+        TextAge = quickavro.Enum("TextAge", "AGE_ONE AGE_TWO")
         with quickavro.BinaryEncoder() as encoder:
             encoder.schema = {
                 "type": "record",
                 "name": "test",
                 "fields": [
-                    {"name": "ages", "type": [
-                        "int",
-                        "null",
-                        {"type": "array", "items": "int"}
-                    ]},
+                    {
+                        "name": "ages",
+                        "type": [
+                            "int",
+                            "null",
+                            {
+                                "type": "array",
+                                "items": "int"
+                            },{
+                                "type": "enum",
+                                "name": "TextAge",
+                                "symbols": ["AGE_ONE", "AGE_TWO"]
+                            }
+                        ]
+                    },
                 ]
             }
             # encoder.schema = {"type": ["string", "null"]}
@@ -132,6 +143,10 @@ class TestEncoder(object):
             assert result == b"\x02"
             result = encoder.write({"ages": [16, 18, 21]})
             assert result == b"\x04\x06 $*\x00"
+            result = encoder.write({"ages": "AGE_ONE"})
+            assert result == b"\x06\x00"
+            result = encoder.write({"ages": TextAge.AGE_TWO})
+            assert result == b"\x06\x02"
 
     def test_type_union_fixed(self):
         with quickavro.BinaryEncoder() as encoder:
