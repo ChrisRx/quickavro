@@ -133,6 +133,29 @@ class TestEncoder(object):
             result = encoder.write({"ages": [16, 18, 21]})
             assert result == b"\x04\x06 $*\x00"
 
+    def test_type_union_fixed(self):
+        with quickavro.BinaryEncoder() as encoder:
+            value = b"\x01\x02\x03\x04\x05\x06\x07\x08"
+            encoder.schema = {
+                "type": "record",
+                "name": "TestRecord",
+                "fields": [
+                    {
+                        "name": "testfield",
+                        "type": [
+                            "null",
+                            {"name": "testfixed", "type": "fixed", "size": len(value)}
+                        ]
+                    }
+                ]
+            }
+            result = encoder.write({"testfield": None})
+            assert result == b"\x00"
+            result = encoder.write({})
+            assert result == b"\x00"
+            result = encoder.write({"testfield": value})
+            assert result == b"\x02\x01\x02\x03\x04\x05\x06\x07\x08"
+
     def test_type_map(self):
         with quickavro.BinaryEncoder() as encoder:
             encoder.schema = {
