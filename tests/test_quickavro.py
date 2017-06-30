@@ -70,3 +70,12 @@ class TestQuickAvro(object):
 
             for record in encoder.read_blocks(data):
                 print(record)
+
+    def test_largeheader(self, tmpdir):
+        avro_file = os.path.join(str(tmpdir), "testfile1.avro")
+        # must set a small initial header size to test chunked header reading
+        # which is necessary for files with very large headers
+        with quickavro.FileReader(avro_file, header_size=16) as reader:
+            for record, expected_record in zip(reader.records(), records):
+                assert record.get('name') == expected_record.get('name')
+                assert record.get('age') == expected_record.get('age')

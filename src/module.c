@@ -47,6 +47,13 @@ MOD_INIT(_quickavro)
     if (m == NULL) {
         return MOD_ERROR_VAL;
     }
+    ReadError = PyErr_NewException("quickavro.ReadError", NULL, NULL);
+    Py_INCREF(ReadError);
+    PyModule_AddObject(m, "ReadError", ReadError);
+
+    WriteError = PyErr_NewException("quickavro.WriteError", NULL, NULL);
+    Py_INCREF(WriteError);
+    PyModule_AddObject(m, "WriteError", WriteError);
 
     Py_INCREF(&EncoderType);
     PyModule_AddObject(m, "Encoder", (PyObject*)&EncoderType);

@@ -10,6 +10,7 @@ from .encoder import *
 from .errors import *
 from .utils import *
 
+from . import _quickavro
 
 class FileReader(BinaryEncoder):
     """
@@ -28,13 +29,13 @@ class FileReader(BinaryEncoder):
                 print(record)
     """
 
-    def __init__(self, f):
+    def __init__(self, f, header_size=INITIAL_HEADER_SIZE):
         super(FileReader, self).__init__()
         if isinstance(f, basestring):
             self.f = open(f, 'rb')
         else:
             self.f = f
-        header = self.read_header()
+        header = self.read_header(header_size)
         metadata = header.get('meta')
         self.schema = json.loads(ensure_str(metadata.get('avro.schema')))
         self.codec = ensure_str(metadata.get('avro.codec'))
@@ -76,10 +77,19 @@ class FileReader(BinaryEncoder):
             if sync_marker != self.sync_marker:
                 break
 
-    def read_header(self):
-        header, offset = read_header(self.f.read(INITIAL_HEADER_SIZE))
-        self.f.seek(offset)
-        return header
+    def read_header(self, size=INITIAL_HEADER_SIZE):
+        b = b""
+        while True:
+            data = self.f.read(size)
+            if len(data) == 0:
+                raise InvalidSchemaError("end of file, unable to find avro header")
+            b += data
+            try:
+                header, offset = read_header(b)
+            except _quickavro.ReadError as error:
+                continue
+            self.f.seek(offset)
+            return header
 
     def read_long(self):
         data = self.peek(MAX_VARINT_SIZE)
