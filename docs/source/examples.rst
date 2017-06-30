@@ -59,7 +59,7 @@ The :class:`quickavro.BinaryEncoder` can also be used directly for reading and w
             {"name": "age",  "type": ["int", "null"]}
           ]
         }
-        with open("example.avro", "r") as f:
+        with open("example.avro", "rb") as f:
             data = f.read()
 
         header, data = encoder.read_header(data)

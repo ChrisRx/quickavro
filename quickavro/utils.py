@@ -4,7 +4,7 @@
 import binascii
 import struct
 
-import _quickavro
+from . import _quickavro
 
 
 def crc32(s):

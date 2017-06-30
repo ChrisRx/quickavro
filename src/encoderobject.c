@@ -21,6 +21,9 @@
 #include <avro.h>
 
 
+PyObject *ReadError;
+PyObject *WriteError;
+
 static void Encoder_dealloc(Encoder* self) {
     if (self->schema) {
         avro_schema_decref(self->schema);
@@ -105,6 +108,7 @@ static PyObject* Encoder_read_long(Encoder* self, PyObject* args) {
 
 static PyObject* Encoder_read_record(Encoder* self, PyObject* args) {
     Py_buffer buffer;
+    PyObject *obj;
     size_t record_size;
     int rval;
 
@@ -114,19 +118,20 @@ static PyObject* Encoder_read_record(Encoder* self, PyObject* args) {
     avro_value_t value;
     avro_reader_memory_set_source(self->reader, buffer.buf, buffer.len);
     avro_generic_value_new(self->iface, &value);
-    rval = avro_value_read(self->reader, &value);
-    if (rval != 0) {
-        PyErr_Format(PyExc_IOError, "%s", avro_strerror());
+    if ((rval = avro_value_read(self->reader, &value)) != 0) {
+        PyErr_Format(ReadError, "%s", avro_strerror());
         return NULL;
     }
-    PyObject* obj = avro_to_python(&value);
-    rval = avro_value_sizeof(&value, &record_size);
-    if (rval != 0) {
-        PyErr_Format(PyExc_IOError, "%s", avro_strerror());
+    obj = avro_to_python(&value);
+    if ((rval = avro_value_sizeof(&value, &record_size)) != 0) {
+        PyErr_Format(ReadError, "%s", avro_strerror());
         return NULL;
     }
     avro_value_decref(&value);
     PyBuffer_Release(&buffer);
+    // TODO: refcount wrong, there are others
+    // TODO: also check all the PyLong_ calls to make sure they
+    // have the correct size types
     return Py_BuildValue("(OO)", obj, PyLong_FromLong(record_size));
 }
 

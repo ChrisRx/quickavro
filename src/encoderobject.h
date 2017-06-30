@@ -24,6 +24,8 @@ extern "C" {
 #include <Python.h>
 #include <avro.h>
 
+extern PyObject *ReadError;
+extern PyObject *WriteError;
 
 typedef struct {
     PyObject_HEAD

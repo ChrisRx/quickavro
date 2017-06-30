@@ -8,11 +8,17 @@ import tarfile
 import pip
 from setuptools import setup, Extension, find_packages
 from distutils.ccompiler import new_compiler
+from distutils.command.build_ext import build_ext
+from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
 
 
 STATIC_BUILD_DIR = "build/static"
 STATIC_LIB_NAME = "quickavro"
 STATIC_LIB = "{0}/lib{1}.a".format(STATIC_BUILD_DIR, STATIC_LIB_NAME)
+
+
+class BuildFailed(Exception): pass
+
 
 def touch(fname, times=None):
     with open(fname, 'a'):
@@ -99,7 +105,6 @@ def download_source_files():
 def compile_vendor_static(static_build_dir, static_lib_name):
     c = new_compiler()
     include_dirs = [ 
-        #'vendor/zlib',
         'vendor/snappy',
         'vendor/jansson',
         'vendor/jansson/src',
@@ -107,27 +112,10 @@ def compile_vendor_static(static_build_dir, static_lib_name):
         'vendor/avro/lang/c/src/avro'
     ]   
     sources = [ 
-        #'vendor/zlib/adler32.c',
-        #'vendor/zlib/compress.c',
-        #'vendor/zlib/crc32.c',
-        #'vendor/zlib/deflate.c',
-        #'vendor/zlib/gzclose.c',
-        #'vendor/zlib/gzlib.c',
-        #'vendor/zlib/gzread.c',
-        #'vendor/zlib/gzwrite.c',
-        #'vendor/zlib/infback.c',
-        #'vendor/zlib/inffast.c',
-        #'vendor/zlib/inflate.c',
-        #'vendor/zlib/inftrees.c',
-        #'vendor/zlib/trees.c',
-        #'vendor/zlib/uncompr.c',
-        #'vendor/zlib/zutil.c',
         'vendor/snappy/snappy-c.cc',
         'vendor/snappy/snappy-sinksource.cc',
         'vendor/snappy/snappy-stubs-internal.cc',
-        # 'vendor/snappy/snappy-test.cc',
         'vendor/snappy/snappy.cc',
-        # 'vendor/snappy/snappy_unittest.cc',
         'vendor/jansson/src/dump.c',
         'vendor/jansson/src/error.c',
         'vendor/jansson/src/hashtable.c',
@@ -176,17 +164,6 @@ def compile_vendor_static(static_build_dir, static_lib_name):
         'vendor/avro/lang/c/src/wrapped-buffer.c',
     ]
     depends = [
-        #'vendor/zlib/crc32.h',
-        #'vendor/zlib/deflate.h',
-        #'vendor/zlib/gzguts.h',
-        #'vendor/zlib/inffast.h',
-        #'vendor/zlib/inffixed.h',
-        #'vendor/zlib/inflate.h',
-        #'vendor/zlib/inftrees.h',
-        #'vendor/zlib/trees.h',
-        #'vendor/zlib/zconf.h',
-        #'vendor/zlib/zlib.h',
-        #'vendor/zlib/zutil.h',
         'vendor/snappy/snappy-c.h',
         'vendor/snappy/snappy-internal.h',
         'vendor/snappy/snappy-sinksource.h',
@@ -239,7 +216,6 @@ def compile_vendor_static(static_build_dir, static_lib_name):
 def compile_ext(static_lib):
     include_dirs = [
         os.path.join(os.getcwd(), "src"),
-        #'vendor/zlib',
         'vendor/snappy',
         'vendor/jansson',
         'vendor/jansson/src',
@@ -266,7 +242,7 @@ def compile_ext(static_lib):
 
     macros = []
     return Extension(
-        "_quickavro",
+        "quickavro._quickavro",
         language="c",
         extra_compile_args=extra_compile_args,
         library_dirs=library_dirs,
@@ -277,6 +253,42 @@ def compile_ext(static_lib):
         depends=depends,
         extra_objects=[static_lib]
     )
+
+
+class BuildExt(build_ext):
+    def run(self):
+        build_ext.run(self)
+
+    def get_inplace_path(self, ext_name):
+        fullname = self.get_ext_fullname(ext_name)
+        modpath = fullname.split('.')
+        filename = self.get_ext_filename(modpath[-1])
+
+        # the inplace option requires to find the package directory
+        # using the build_py command for that
+        package = '.'.join(modpath[0:-1])
+        build_py = self.get_finalized_command('build_py')
+        package_dir = os.path.abspath(build_py.get_package_dir(package))
+
+        # returning
+        #   package_dir/filename
+        fullpath = os.path.join(package_dir, filename)
+        return fullpath
+
+    def build_extension(self, ext):
+        try:
+            build_ext.build_extension(self, ext)
+        except (CCompilerError, DistutilsExecError, DistutilsPlatformError, IOError):
+            raise BuildFailed()
+
+        # This ensures that the shared objects are *also* built
+        # in the path to avoid problems with path resolution when
+        # working with local files.
+        src = self.get_ext_fullpath("quickavro._quickavro")
+        dst = self.get_inplace_path("quickavro._quickavro")
+        self.mkpath(os.path.dirname(dst))
+        self.copy_file(src, dst, preserve_mode=False)
+
 
 def exists(path):
     try:
@@ -300,6 +312,7 @@ if __name__ == '__main__':
         license="Apache 2.0",
         url="https://github.com/ChrisRx/quickavro",
         packages=find_packages(exclude=['tests*']),
+        cmdclass={'build_ext': BuildExt},
         ext_modules=[
             compile_ext(STATIC_LIB)
         ],

@@ -1,13 +1,13 @@
 .PHONY: all build clean install vendor
 
 PYMODULE=quickavro
-CLEAN=build dist MANIFEST *.egg-info *.egg htmlcov tests/tmp .cache .benchmarks tmp .eggs
+CLEAN=build dist MANIFEST *.egg-info *.egg htmlcov tests/tmp .cache .benchmarks tmp .eggs $(PYMODULE)/*.so
 
 all: build
 
 build:
 	@echo "Building quickavro extension ..."
-	@python setup.py bdist_wheel
+	@python setup.py build --force
 
 install:
 	@echo "Installing quickavro ..."
@@ -16,7 +16,6 @@ install:
 publish: test build
 	python setup.py register
 	python setup.py sdist upload
-	#python setup.py bdist_wheel --universal upload
 
 test:
 	@py.test tests/

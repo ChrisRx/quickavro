@@ -4,7 +4,7 @@ import os
 import json
 import zlib
 
-from _quickavro import Encoder
+from ._quickavro import Encoder
 
 from .constants import *
 from .errors import *
