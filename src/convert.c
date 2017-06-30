@@ -223,14 +223,16 @@ static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
     avro_schema_t schema = avro_value_get_schema(value);
     if (_PyUnicode_CheckExact(obj)) {
         symbol_name = PyUnicode_AsUTF8(obj);
+        index = avro_schema_enum_get_by_name(schema, symbol_name);
     } else if (_PyLong_Check(obj)) {
         symbol_name = avro_schema_enum_get(schema, PyLong_AsLong(obj));
+        index = avro_schema_enum_get_by_name(schema, symbol_name);
     } else {
         PyObject* s = PyObject_GetAttrString(obj, "value");
         symbol_name = PyUnicode_AsUTF8(s);
+        index = avro_schema_enum_get_by_name(schema, symbol_name);
         Py_DECREF(s);
     }
-    index = avro_schema_enum_get_by_name(schema, symbol_name);
     return avro_error(avro_value_set_enum(value, index));
 }
 
@@ -251,6 +253,7 @@ static int pybytes_to_fixed(PyObject* obj, avro_value_t* value) {
 static int pystring_to_string(PyObject* obj, avro_value_t* value) {
     // Switch to PyUnicode_AsUTF8AndSize and add macros for compat with
     // Python versions before 3.3
+    int rval;
     int status;
     char* buf;
     Py_ssize_t length;
@@ -260,14 +263,15 @@ static int pystring_to_string(PyObject* obj, avro_value_t* value) {
         if (!status) {
             //
         }
+        rval = avro_error(avro_value_set_string_len(value, buf, length+1));
         Py_DECREF(s);
     } else {
         status = PyBytes_AsStringAndSize(obj, &buf, &length);
         if (!status) {
             //
         }
+        rval = avro_error(avro_value_set_string_len(value, buf, length+1));
     }
-    int rval = avro_error(avro_value_set_string_len(value, buf, length+1));
     return rval;
 }
 
@@ -346,20 +350,24 @@ static int validate_array(PyObject* obj, avro_schema_t schema) {
 }
 
 static int validate_enum(PyObject* obj, avro_schema_t schema) {
+    int rval;
     const char* symbol_name;
 
     if (obj == Py_None) {
         return -1;
     } else if (_PyUnicode_CheckExact(obj)) {
         symbol_name = PyUnicode_AsUTF8(obj);
+        rval = avro_schema_enum_get_by_name(schema, symbol_name);
     } else if (_PyLong_Check(obj)) {
         symbol_name = avro_schema_enum_get(schema, PyLong_AsLong(obj));
+        rval = avro_schema_enum_get_by_name(schema, symbol_name);
     } else {
         PyObject* s = PyObject_GetAttrString(obj, "value");
         symbol_name = PyUnicode_AsUTF8(obj);
+        rval = avro_schema_enum_get_by_name(schema, symbol_name);
         Py_DECREF(s);
     }
-    return avro_schema_enum_get_by_name(schema, symbol_name);
+    return rval;
 }
 
 static int validate_map(PyObject* obj, avro_schema_t schema) {
