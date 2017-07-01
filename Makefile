@@ -2,7 +2,7 @@
 
 PYMODULE=quickavro
 CLEAN=build dist MANIFEST *.egg-info *.egg htmlcov tests/tmp .cache .benchmarks tmp .eggs $(PYMODULE)/*.so
-GH_PAGES_SOURCES=docs/source $(PYMODULE) docs/Makefile
+GH_PAGES_SOURCES=docs/source $(PYMODULE) docs/Makefile vendor
 CURRENT_BRANCH:=$(shell git rev-parse --abbrev-ref HEAD)
 NEW_COMMIT_MESSAGE:=$(shell git log $(CURRENT_BRANCH) -1 --pretty=short --abbrev-commit)
 
