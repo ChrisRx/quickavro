@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>API &mdash; quickavro 0.1.20 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="quickavro 0.1.20 documentation" href="index.html"/>
+        <link rel="next" title="quickavro examples" href="examples.html"/>
+        <link rel="prev" title="Welcome to quickavro’s documentation!" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> quickavro
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.20
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-quickavro.encoder">quickavro.encoder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-quickavro.reader">quickavro.reader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-quickavro.writer">quickavro.writer module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">quickavro examples</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">quickavro</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>API</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-quickavro.encoder">
+<span id="quickavro-encoder-module"></span><h2>quickavro.encoder module<a class="headerlink" href="#module-quickavro.encoder" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="quickavro.encoder.BinaryEncoder">
+<em class="property">class </em><code class="descclassname">quickavro.encoder.</code><code class="descname">BinaryEncoder</code><span class="sig-paren">(</span><em>schema=None</em>, <em>codec=’null’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/quickavro/encoder.html#BinaryEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#quickavro.encoder.BinaryEncoder" title="Permalink to this definition">¶</a></dt>
+<dd><p>The object used to implement binary Avro encoding in quickavro. It
+is used internally and is exposed in the quickavro Python API.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>schema</strong> – (optional) Dictionary to use as Avro schema for this
+<a class="reference internal" href="#quickavro.encoder.BinaryEncoder" title="quickavro.encoder.BinaryEncoder"><code class="xref py py-class docutils literal"><span class="pre">BinaryEncoder</span></code></a>.</li>
+<li><strong>codec</strong> – (optional) Compression codec used with
+<a class="reference internal" href="#quickavro.encoder.BinaryEncoder" title="quickavro.encoder.BinaryEncoder"><code class="xref py py-class docutils literal"><span class="pre">BinaryEncoder</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">quickavro</span><span class="o">.</span><span class="n">BinaryEncoder</span><span class="p">()</span> <span class="k">as</span> <span class="n">encoder</span><span class="p">:</span>
+    <span class="n">encoder</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;record&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Person&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;age&quot;</span><span class="p">,</span>  <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">]}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;test.avro, &quot;</span><span class="n">wb</span><span class="s2">&quot;) as f:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">encoder</span><span class="o">.</span><span class="n">header</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">encoder</span><span class="o">.</span><span class="n">write_blocks</span><span class="p">(</span><span class="n">records</span><span class="p">):</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="quickavro.encoder.read_header">
+<code class="descclassname">quickavro.encoder.</code><code class="descname">read_header</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/quickavro/encoder.html#read_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#quickavro.encoder.read_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads Avro binary file header</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> – bytes representing Avro file header.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="quickavro.encoder.write_header">
+<code class="descclassname">quickavro.encoder.</code><code class="descname">write_header</code><span class="sig-paren">(</span><em>schema</em>, <em>sync_marker</em>, <em>codec=’null’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/quickavro/encoder.html#write_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#quickavro.encoder.write_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes Avro binary file header</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>schema</strong> – Dictionary to use as Avro schema.</li>
+<li><strong>sync_marker</strong> – str used to verify blocks.</li>
+<li><strong>codec</strong> – (optional) Compression codec.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-quickavro.reader">
+<span id="quickavro-reader-module"></span><h2>quickavro.reader module<a class="headerlink" href="#module-quickavro.reader" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="quickavro.reader.FileReader">
+<em class="property">class </em><code class="descclassname">quickavro.reader.</code><code class="descname">FileReader</code><span class="sig-paren">(</span><em>f</em>, <em>header_size=8192</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/quickavro/reader.html#FileReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#quickavro.reader.FileReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#quickavro.reader.FileReader" title="quickavro.reader.FileReader"><code class="xref py py-class docutils literal"><span class="pre">FileReader</span></code></a> object implements <code class="xref py py-class docutils literal"><span class="pre">quickavro.BinaryEncoder</span></code>
+and provides and interface to read Avro files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>f</strong> – File-like object or path of file that <a class="reference internal" href="#quickavro.reader.FileReader" title="quickavro.reader.FileReader"><code class="xref py py-class docutils literal"><span class="pre">FileReader</span></code></a>
+will read from.</td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">quickavro</span><span class="o">.</span><span class="n">FileReader</span><span class="p">(</span><span class="s2">&quot;test.avro&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">reader</span><span class="o">.</span><span class="n">records</span><span class="p">():</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-quickavro.writer">
+<span id="quickavro-writer-module"></span><h2>quickavro.writer module<a class="headerlink" href="#module-quickavro.writer" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="quickavro.writer.FileWriter">
+<em class="property">class </em><code class="descclassname">quickavro.writer.</code><code class="descname">FileWriter</code><span class="sig-paren">(</span><em>f</em>, <em>codec=’null’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/quickavro/writer.html#FileWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#quickavro.writer.FileWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <a class="reference internal" href="#quickavro.writer.FileWriter" title="quickavro.writer.FileWriter"><code class="xref py py-class docutils literal"><span class="pre">FileWriter</span></code></a> object implements <code class="xref py py-class docutils literal"><span class="pre">quickavro.BinaryEncoder</span></code>
+and provides and interface to write Avro files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>f</strong> – File-like object or path of file that <a class="reference internal" href="#quickavro.writer.FileWriter" title="quickavro.writer.FileWriter"><code class="xref py py-class docutils literal"><span class="pre">FileWriter</span></code></a>
+will write into.</li>
+<li><strong>codec</strong> – (optional) Compression codec used with
+<a class="reference internal" href="#quickavro.writer.FileWriter" title="quickavro.writer.FileWriter"><code class="xref py py-class docutils literal"><span class="pre">FileWriter</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">quickavro</span><span class="o">.</span><span class="n">FileWriter</span><span class="p">(</span><span class="s2">&quot;test.avro) as writer:</span>
+    <span class="n">writer</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;record&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Person&quot;</span><span class="p">,</span>
+      <span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;age&quot;</span><span class="p">,</span>  <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;null&quot;</span><span class="p">]}</span>
+      <span class="p">]</span>
+    <span class="p">}</span>
+
+    <span class="n">records</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Larry&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">21</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Gary&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">34</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Barry&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">27</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dark Larry&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">1134</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Larry of the Void&quot;</span><span class="p">,</span> <span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="bp">None</span><span class="p">},</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="n">writer</span><span class="o">.</span><span class="n">write_record</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="examples.html" class="btn btn-neutral float-right" title="quickavro examples" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to quickavro’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Chris Marshall.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1.20',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
