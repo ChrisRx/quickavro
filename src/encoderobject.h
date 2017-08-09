@@ -24,16 +24,19 @@ extern "C" {
 #include <Python.h>
 #include <avro.h>
 
+extern PyObject *AvroError;
 extern PyObject *ReadError;
+extern PyObject *SchemaError;
 extern PyObject *WriteError;
 
 typedef struct {
     PyObject_HEAD
-    avro_schema_t schema;
+    avro_schema_t       schema;
     avro_value_iface_t* iface;
-    avro_reader_t reader;
-    avro_writer_t writer;
+    avro_reader_t       reader;
+    avro_writer_t       writer;
 
+    int flags;
     char* buffer;
     size_t buffer_length;
 } Encoder;

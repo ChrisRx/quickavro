@@ -40,6 +40,7 @@ static const tabledef p2a[] = {
     {"NoneType", "null"},
     {"bool", "boolean"},
     {"list", "array"},
+    {"float", "float"},
     {NULL}
 };
 

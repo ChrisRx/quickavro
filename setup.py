@@ -203,7 +203,7 @@ def compile_vendor_static(static_build_dir, static_lib_name):
         'vendor/avro/lang/c/src/avro/schema.h',
         'vendor/avro/lang/c/src/avro/value.h',
     ]
-    extra_compile_args = ['-O3', '-fPIC', '-g', '-Wall', '-Wfatal-errors', '-DHAVE_STDINT_H', '-DJSON_INLINE=inline']
+    extra_compile_args = ['-O3', '-fPIC', '-g', '-Wall', '-Wfatal-errors', '-DHAVE_STDINT_H', '-DJSON_INLINE=inline', '-DTHREADSAFE=true']
     touch('vendor/jansson/src/jansson_config.h')
     objs = c.compile(sources,
         include_dirs=include_dirs,

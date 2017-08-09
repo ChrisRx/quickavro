@@ -12,7 +12,7 @@ quickavro is a library for working with the avro file format.
 """
 
 __title__ = 'quickavro'
-__version__ = '0.1.20'
+__version__ = '0.1.21'
 __authors__ = ['Chris Marshall']
 __license__ = 'Apache 2.0'
 __all__ = ['BinaryEncoder', 'Enum', 'FileReader', 'FileWriter']
@@ -20,6 +20,12 @@ __all__ = ['BinaryEncoder', 'Enum', 'FileReader', 'FileWriter']
 from .constants import (
     DEFAULT_SYNC_INTERVAL,
     HEADER_SCHEMA
+)
+from ._quickavro import (
+    AvroError,
+    ReadError,
+    SchemaError,
+    WriteError
 )
 from .errors import (
     CodecNotSupported,

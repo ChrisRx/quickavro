@@ -6,11 +6,14 @@ import pytest
 
 import quickavro
 
+# from quickavro._quickavro import SchemaError
+# from quickavro import SchemaError
+
 
 # Default values.  not implemented in C? on read only?
 
 @pytest.mark.usefixtures('tmpdir')
-class TestEncoder(object):
+class TestEncoderBasic(object):
     def test_type_string(self):
         with quickavro.BinaryEncoder() as encoder:
             encoder.schema = {"name": "name", "type": "string"}
@@ -38,8 +41,8 @@ class TestEncoder(object):
     def test_type_float(self):
         with quickavro.BinaryEncoder() as encoder:
             encoder.schema = {"type": "float"}
-            result = encoder.write(108311.521837843)
-            assert result == b"\x80\x8b\xd3G"
+            result = encoder.write(8311.125)
+            assert result == b"\x80\xdc\x01F"
 
     def test_type_double(self):
         with quickavro.BinaryEncoder() as encoder:
@@ -195,3 +198,19 @@ class TestEncoder(object):
             chain = {"linkid": 1, "nextlink": {"linkid": 2}}
             result = encoder.write(chain)
             assert result == b"\x02\x02\x04\x00"
+
+
+@pytest.mark.usefixtures('tmpdir')
+class TestEncoderOther(object):
+    def test_invalid_union(self):
+        with quickavro.BinaryEncoder() as encoder:
+            with pytest.raises(quickavro.SchemaError):
+                encoder.schema = {
+                    "type": "record",
+                    "name": "test",
+                    "fields": [
+                        {"name": "age",  "type": ["invalid", "null"]}
+                    ]
+                }
+                result = encoder.write({"age": 8011.125})
+                assert result == b"\x08test"

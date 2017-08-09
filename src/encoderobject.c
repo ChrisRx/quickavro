@@ -21,23 +21,25 @@
 #include <avro.h>
 
 
+PyObject *AvroError;
 PyObject *ReadError;
+PyObject *SchemaError;
 PyObject *WriteError;
 
 static void Encoder_dealloc(Encoder* self) {
-    if (self->schema) {
+    if (self->schema != NULL) {
         avro_schema_decref(self->schema);
     }
-    if (self->iface) {
+    if (self->iface != NULL) {
         avro_value_iface_decref(self->iface);
     }
-    if (self->reader) {
+    if (self->reader != NULL) {
         avro_reader_free(self->reader);
     }
-    if (self->writer) {
+    if (self->writer != NULL) {
         avro_writer_free(self->writer);
     }
-    if (self->buffer) {
+    if (self->buffer != NULL) {
         avro_free(self->buffer, self->buffer_length);
     }
 
@@ -48,6 +50,11 @@ static PyObject* Encoder_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
     Encoder* self;
 
     self = (Encoder*)type->tp_alloc(type, 0);
+    self->buffer = NULL;
+    self->reader = NULL;
+    self->writer = NULL;
+    self->iface = NULL;
+    self->schema = NULL;
     return (PyObject*)self;
 }
 
@@ -94,7 +101,7 @@ static PyObject* Encoder_read_long(Encoder* self, PyObject* args) {
     int offset = 0;
     do {
         if (offset == MAX_VARINT_SIZE) {
-            PyErr_SetString(PyExc_ValueError, "Varint is too long");
+            PyErr_SetString(ReadError, "Varint is too long");
             return NULL;
         }
         b = buf[offset];
@@ -132,7 +139,9 @@ static PyObject* Encoder_read_record(Encoder* self, PyObject* args) {
     // TODO: refcount wrong, there are others
     // TODO: also check all the PyLong_ calls to make sure they
     // have the correct size types
-    return Py_BuildValue("(OO)", obj, PyLong_FromLong(record_size));
+    PyObject *ret = Py_BuildValue("(OO)", obj, PyLong_FromLong(record_size));
+    Py_XDECREF(obj);
+    return ret;
 }
 
 static PyObject* Encoder_set_schema(Encoder* self, PyObject* args) {
@@ -140,12 +149,13 @@ static PyObject* Encoder_set_schema(Encoder* self, PyObject* args) {
     avro_schema_error_t error;
 
     if (!PyArg_ParseTuple(args, "s", &json_str)) {
-        PyErr_SetString(PyExc_ValueError, "Not provided valid arguments");
+        PyErr_SetString(SchemaError, "Not provided valid arguments");
         return NULL;
     }
     int r = avro_schema_from_json(json_str, 0, &self->schema, &error);
     if (r != 0 || self->schema == NULL) {
-        PyErr_Format(PyExc_IOError, "%s", avro_strerror());
+        self->schema = NULL;
+        PyErr_Format(SchemaError, "%s", avro_strerror());
         return NULL;
     }
     self->iface = avro_generic_class_from_schema(self->schema);

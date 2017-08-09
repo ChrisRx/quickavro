@@ -17,11 +17,12 @@
 #include "convert.h"
 #include "compat.h"
 #include <avro.h>
+#include "encoderobject.h"
 
 
 int avro_error(int rval) {
     if (rval != 0) {
-        PyErr_Format(PyExc_IOError, "%s", avro_strerror());
+        PyErr_Format(AvroError, "%s", avro_strerror());
     }
     return rval;
 }
@@ -30,6 +31,9 @@ static const char* lookup(const char* key) {
     size_t i;
     size_t table_length = tabledef_size(p2a);
     for (i=0; i<table_length; i++) {
+        if (p2a[i].python_type == NULL) {
+            continue;
+        }
         if (strcmp(key, p2a[i].python_type) == 0) {
             return p2a[i].avro_type;
         }
@@ -91,8 +95,10 @@ static PyObject* fixed_to_pybytes(avro_value_t* value) {
 
 static PyObject* float_to_pyfloat(avro_value_t* value) {
     float f;
+    char buf[50];
     avro_value_get_float(value, &f);
-    return PyFloat_FromDouble(f);
+    sprintf(buf, "%.7g", f);
+    return PyFloat_FromDouble(atof(buf));
 }
 
 static PyObject* int32_to_pylong(avro_value_t* value) {
@@ -153,7 +159,7 @@ static int pybytes_to_bytes(PyObject* obj, avro_value_t* value) {
     if (PyBytes_Check(obj)) {
         PyBytes_AsStringAndSize(obj, &buf, &length);
     } else {
-        PyErr_SetString(PyExc_Exception, "Expected bytes, given str");
+        PyErr_SetString(WriteError, "Expected bytes, given str");
         return -1;
     }
     return avro_error(avro_value_set_bytes(value, buf, length));
@@ -177,13 +183,21 @@ static int pydict_to_map(PyObject* obj, avro_value_t* dest) {
 }
 
 static int pyfloat_to_double(PyObject* obj, avro_value_t* value) {
-    long l = PyFloat_AsDouble(obj);
-    return avro_error(avro_value_set_double(value, l));
+    double d = PyFloat_AsDouble(obj);
+    if (d == -1.0 && PyErr_Occurred()) {
+        PyErr_Format(WriteError, "Unable to convert Python object %R to double", obj);
+        return -1;
+    }
+    return avro_error(avro_value_set_double(value, d));
 }
 
 static int pyfloat_to_float(PyObject* obj, avro_value_t* value) {
-    long l = PyFloat_AsDouble(obj);
-    return avro_error(avro_value_set_float(value, l));
+    double d = PyFloat_AsDouble(obj);
+    if (d == -1.0 && PyErr_Occurred()) {
+        PyErr_Format(WriteError, "Unable to convert Python object %R to float", obj);
+        return -1;
+    }
+    return avro_error(avro_value_set_float(value, (float)d));
 }
 
 static int pylist_to_array(PyObject* obj, avro_value_t* dest) {
@@ -237,17 +251,15 @@ static int pystring_to_enum(PyObject* obj, avro_value_t* value) {
 }
 
 static int pybytes_to_fixed(PyObject* obj, avro_value_t* value) {
-    int status;
     char* buf;
     Py_ssize_t length;
     if (PyBytes_Check(obj)) {
         PyBytes_AsStringAndSize(obj, &buf, &length);
     } else {
-        PyErr_SetString(PyExc_Exception, "Expected bytes, given str");
+        PyErr_SetString(WriteError, "Expected bytes, given str");
         return -1;
     }
-    int rval = avro_error(avro_value_set_fixed(value, buf, length));
-    return rval;
+    return avro_error(avro_value_set_fixed(value, buf, length));
 }
 
 static int pystring_to_string(PyObject* obj, avro_value_t* value) {
@@ -327,11 +339,20 @@ static int python_to_union(PyObject* obj, avro_value_t* value) {
 
         branch_schema = avro_schema_union_branch_by_name(schema, &branch_index, name);
         if (branch_schema == NULL) {
-            return -1;
+            if (strcmp(name, "float") != 0) {
+                goto union_error;
+            }
+            branch_schema = avro_schema_union_branch_by_name(schema, &branch_index, "double");
+            if (branch_schema == NULL) {
+                goto union_error;
+            }
         }
     }
     avro_value_set_branch(value, branch_index, &branch);
     return python_to_avro(obj, &branch);
+union_error:
+    PyErr_Format(WriteError, "Unable to find schema branch name '%s'", name);
+    return -1;
 }
 
 static int validate_array(PyObject* obj, avro_schema_t schema) {

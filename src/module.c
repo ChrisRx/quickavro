@@ -47,9 +47,17 @@ MOD_INIT(_quickavro)
     if (m == NULL) {
         return MOD_ERROR_VAL;
     }
+    AvroError = PyErr_NewException("quickavro.AvroError", NULL, NULL);
+    Py_INCREF(AvroError);
+    PyModule_AddObject(m, "AvroError", AvroError);
+
     ReadError = PyErr_NewException("quickavro.ReadError", NULL, NULL);
     Py_INCREF(ReadError);
     PyModule_AddObject(m, "ReadError", ReadError);
+
+    SchemaError = PyErr_NewException("quickavro.SchemaError", NULL, NULL);
+    Py_INCREF(SchemaError);
+    PyModule_AddObject(m, "SchemaError", SchemaError);
 
     WriteError = PyErr_NewException("quickavro.WriteError", NULL, NULL);
     Py_INCREF(WriteError);
