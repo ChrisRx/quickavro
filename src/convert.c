@@ -411,26 +411,32 @@ static int validate_map(PyObject* obj, avro_schema_t schema) {
 }
 
 static int validate_record(PyObject* obj, avro_schema_t schema) {
-    size_t record_size;
-    size_t i;
-    PyObject* v;
-    avro_schema_t subschema;
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
 
     if (!PyDict_Check(obj)) {
         return -1;
     }
 
-    record_size = avro_schema_record_size(schema);
-    for (i = 0; i < record_size; i++) {
-        v = PyDict_GetItemString(obj, avro_schema_record_field_name(schema, i));
-        if (v == NULL) {
-            v = Py_None;
-        }
-        subschema = avro_schema_record_field_get_by_index(schema, i);
-        if (validate(v, subschema) < 0) {
+    // Check all attributes of the record to see if there is a supported
+    // corresponding attribute in the schema.  If there is, recursively
+    // validate the value against the corresponding subschema.
+    while (PyDict_Next(obj, &pos, &key, &value)) {
+        avro_schema_t subschema;
+        int i;
+        const char* c_key = PyUnicode_AsUTF8(key);
+        i = avro_schema_record_field_get_index(schema, c_key);
+        if (i < 0) {
+            // The attribute in the record is not in the schema
             return -1;
+        } else {
+            subschema = avro_schema_record_field_get_by_index(schema, i);
+            if (validate(value, subschema) < 0) {
+                return -1;
+            }
         }
     }
+
     return 0;
 }
 
