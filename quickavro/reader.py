@@ -38,7 +38,7 @@ class FileReader(BinaryEncoder):
         header = self.read_header(header_size)
         metadata = header.get('meta')
         self.schema = json.loads(ensure_str(metadata.get('avro.schema')))
-        self.codec = ensure_str(metadata.get('avro.codec'))
+        self.codec = ensure_str(metadata.get('avro.codec', 'null'))
         self.sync_marker = header.get('sync')
 
     def close(self):
