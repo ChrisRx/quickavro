@@ -12,6 +12,7 @@ from .utils import *
 
 from . import _quickavro
 
+
 class FileReader(BinaryEncoder):
     """
     The :class:`FileReader` object implements :class:`quickavro.BinaryEncoder`
@@ -29,7 +30,7 @@ class FileReader(BinaryEncoder):
                 print(record)
     """
 
-    def __init__(self, f, header_size=INITIAL_HEADER_SIZE):
+    def __init__(self, f, header_size=INITIAL_HEADER_SIZE, reader_schema=None):
         super(FileReader, self).__init__()
         if isinstance(f, basestring):
             self.f = open(f, 'rb')
@@ -37,7 +38,11 @@ class FileReader(BinaryEncoder):
             self.f = f
         header = self.read_header(header_size)
         metadata = header.get('meta')
-        self.schema = json.loads(ensure_str(metadata.get('avro.schema')))
+        if reader_schema is not None:
+            self._schema = json.loads(ensure_str(metadata.get('avro.schema')))
+            self.reader_schema = reader_schema
+        else:
+            self.schema = json.loads(ensure_str(metadata.get('avro.schema')))
         self.codec = ensure_str(metadata.get('avro.codec', 'null'))
         self.sync_marker = header.get('sync')
 

@@ -27,11 +27,20 @@ PyObject *SchemaError;
 PyObject *WriteError;
 
 static void Encoder_dealloc(Encoder* self) {
-    if (self->schema != NULL) {
-        avro_schema_decref(self->schema);
+    if (self->reader_iface != NULL) {
+        avro_value_iface_decref(self->reader_iface);
     }
-    if (self->iface != NULL) {
-        avro_value_iface_decref(self->iface);
+    if (self->reader_schema != NULL) {
+        avro_schema_decref(self->reader_schema);
+    }
+    if (self->writer_schema != NULL) {
+        avro_schema_decref(self->writer_schema);
+    }
+    if (self->writer_iface != NULL) {
+        avro_value_iface_decref(self->writer_iface);
+    }
+    if (self->resolver != NULL) {
+        avro_value_iface_decref(self->resolver);
     }
     if (self->reader != NULL) {
         avro_reader_free(self->reader);
@@ -51,10 +60,14 @@ static PyObject* Encoder_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
 
     self = (Encoder*)type->tp_alloc(type, 0);
     self->buffer = NULL;
+    self->resolver = NULL;
     self->reader = NULL;
     self->writer = NULL;
-    self->iface = NULL;
-    self->schema = NULL;
+    self->reader_iface = NULL;
+    self->reader_schema = NULL;
+    self->writer_iface = NULL;
+    self->writer_schema = NULL;
+    self->reader_schema = NULL;
     return (PyObject*)self;
 }
 
@@ -68,22 +81,42 @@ static int Encoder_init(Encoder* self, PyObject* args, PyObject* kwds) {
 
 static PyObject* Encoder_read(Encoder* self, PyObject* args) {
     Py_buffer buffer;
-    int rval;
-
     if (!PyArg_ParseTuple(args, "s*", &buffer)) {
         Py_RETURN_NONE;
     }
-    avro_value_t value;
-    avro_reader_memory_set_source(self->reader, buffer.buf, buffer.len);
-    avro_generic_value_new(self->iface, &value);
     PyObject* values = PyList_New(0);
-    while ((rval = avro_value_read(self->reader, &value)) == 0) {
-        PyObject* item = avro_to_python(&value);
+    avro_value_t  writer_value;
+    avro_value_t  reader_value;
+    int rval;
+    avro_reader_memory_set_source(self->reader, buffer.buf, buffer.len);
+    if ((rval = avro_generic_value_new(self->reader_iface, &reader_value)) != 0) {
+        PyErr_Format(ReadError, "%s", avro_strerror());
+        return NULL;
+    };
+    if (self->writer_iface != NULL) {
+        if ((rval = avro_resolved_writer_new_value(self->writer_iface, &writer_value)) != 0) {
+            PyErr_Format(ReadError, "%s", avro_strerror());
+            return NULL;
+        }
+        avro_resolved_writer_set_dest(&writer_value, &reader_value);
+        while ((rval = avro_value_read(self->reader, &writer_value)) == 0) {
+            PyObject* item = avro_to_python(&reader_value);
+            PyList_Append(values, item);
+            avro_value_reset(&reader_value);
+            Py_DECREF(item);
+        }
+        avro_value_decref(&reader_value);
+        avro_value_decref(&writer_value);
+        PyBuffer_Release(&buffer);
+        return values;
+    }
+    while ((rval = avro_value_read(self->reader, &reader_value)) == 0) {
+        PyObject* item = avro_to_python(&reader_value);
         PyList_Append(values, item);
-        avro_value_reset(&value);
+        avro_value_reset(&reader_value);
         Py_DECREF(item);
     }
-    avro_value_decref(&value);
+    avro_value_decref(&reader_value);
     PyBuffer_Release(&buffer);
     return values;
 }
@@ -122,19 +155,48 @@ static PyObject* Encoder_read_record(Encoder* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "s*", &buffer)) {
         Py_RETURN_NONE;
     }
-    avro_value_t value;
+    avro_value_t reader_value;
+    avro_value_t writer_value;
     avro_reader_memory_set_source(self->reader, buffer.buf, buffer.len);
-    avro_generic_value_new(self->iface, &value);
-    if ((rval = avro_value_read(self->reader, &value)) != 0) {
+    if ((rval = avro_generic_value_new(self->reader_iface, &reader_value)) != 0) {
+        PyErr_Format(ReadError, "%s", avro_strerror());
+        return NULL;
+    };
+    if (self->writer_iface != NULL) {
+        if ((rval = avro_resolved_writer_new_value(self->writer_iface, &writer_value)) != 0) {
+            PyErr_Format(ReadError, "%s", avro_strerror());
+            return NULL;
+        }
+        avro_resolved_writer_set_dest(&writer_value, &reader_value);
+        if ((rval = avro_value_read(self->reader, &writer_value)) != 0) {
+            PyErr_Format(ReadError, "%s", avro_strerror());
+            return NULL;
+        }
+        obj = avro_to_python(&reader_value);
+        if ((rval = avro_value_sizeof(&reader_value, &record_size)) != 0) {
+            PyErr_Format(ReadError, "%s", avro_strerror());
+            return NULL;
+        }
+        avro_value_decref(&reader_value);
+        avro_value_decref(&writer_value);
+        PyBuffer_Release(&buffer);
+        // TODO: refcount wrong, there are others
+        // TODO: also check all the PyLong_ calls to make sure they
+        // have the correct size types
+        PyObject *ret = Py_BuildValue("(OO)", obj, PyLong_FromLong(record_size));
+        Py_XDECREF(obj);
+        return ret;
+    }
+    if ((rval = avro_value_read(self->reader, &reader_value)) != 0) {
         PyErr_Format(ReadError, "%s", avro_strerror());
         return NULL;
     }
-    obj = avro_to_python(&value);
-    if ((rval = avro_value_sizeof(&value, &record_size)) != 0) {
+    obj = avro_to_python(&reader_value);
+    if ((rval = avro_value_sizeof(&reader_value, &record_size)) != 0) {
         PyErr_Format(ReadError, "%s", avro_strerror());
         return NULL;
     }
-    avro_value_decref(&value);
+    avro_value_decref(&reader_value);
     PyBuffer_Release(&buffer);
     // TODO: refcount wrong, there are others
     // TODO: also check all the PyLong_ calls to make sure they
@@ -144,21 +206,52 @@ static PyObject* Encoder_read_record(Encoder* self, PyObject* args) {
     return ret;
 }
 
-static PyObject* Encoder_set_schema(Encoder* self, PyObject* args) {
-    char* json_str;
+static PyObject* Encoder_set_schema(Encoder* self, PyObject* args, PyObject *kwargs) {
+    char* json_str = NULL;
+    char* reader_schema = NULL;
     avro_schema_error_t error;
 
-    if (!PyArg_ParseTuple(args, "s", &json_str)) {
-        PyErr_SetString(SchemaError, "Not provided valid arguments");
+    static char *kwlist[] = {"json_str", "reader_schema", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s", kwlist, &json_str, &reader_schema)) {
         return NULL;
     }
-    int r = avro_schema_from_json(json_str, 0, &self->schema, &error);
-    if (r != 0 || self->schema == NULL) {
-        self->schema = NULL;
+    int r = avro_schema_from_json(json_str, 0, &self->writer_schema, &error);
+    if (r != 0 || self->writer_schema == NULL) {
+        self->writer_schema = NULL;
         PyErr_Format(SchemaError, "%s", avro_strerror());
         return NULL;
     }
-    self->iface = avro_generic_class_from_schema(self->schema);
+    if (reader_schema != NULL) {
+        int r = avro_schema_from_json(reader_schema, 0, &self->reader_schema, &error);
+        if (r != 0 || self->reader_schema == NULL) {
+            self->reader_schema = NULL;
+            PyErr_Format(SchemaError, "%s", avro_strerror());
+            return NULL;
+        }
+        self->writer_iface = avro_resolved_writer_new(self->writer_schema, self->reader_schema);
+        if (self->writer_iface == NULL) {
+            PyErr_Format(SchemaError, "%s", avro_strerror());
+            return NULL;
+        }
+        self->resolver = avro_resolved_reader_new(self->writer_schema, self->reader_schema);
+        if (self->resolver == NULL) {
+            PyErr_Format(SchemaError, "%s", avro_strerror());
+            return NULL;
+        }
+        self->reader_iface = avro_generic_class_from_schema(self->reader_schema);
+    } else {
+        self->reader_iface = avro_generic_class_from_schema(self->writer_schema);
+        // ensure writer_iface is cleaned up if set_schema is set without
+        // reader_schema
+        if (self->writer_iface != NULL) {
+            avro_value_iface_decref(self->writer_iface);
+            self->writer_iface = NULL;
+        }
+        if (self->resolver != NULL) {
+            avro_value_iface_decref(self->resolver);
+            self->resolver = NULL;
+        }
+    }
     return Py_BuildValue("i", 0);
 }
 
@@ -169,11 +262,49 @@ static PyObject* Encoder_write(Encoder* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "O", &obj)) {
         Py_RETURN_NONE;
     }
-    avro_value_t value;
-    avro_generic_value_new(self->iface, &value);
-    rval = python_to_avro(obj, &value);
+    avro_value_t reader_value;
+    if ((rval = avro_generic_value_new(self->reader_iface, &reader_value)) != 0) {
+        PyErr_Format(ReadError, "%s", avro_strerror());
+        return NULL;
+    };
+    if (self->resolver != NULL) {
+        avro_value_t resolved;
+        if ((rval = python_to_avro(obj, &reader_value)) == 0) {
+            rval = avro_value_write(self->writer, &reader_value);
+        }
+        if ((rval = avro_resolved_reader_new_value(self->resolver, &resolved)) != 0) {
+            PyErr_Format(WriteError, "%s", avro_strerror());
+            return NULL;
+        }
+        avro_resolved_reader_set_source(&resolved, &reader_value);
+        size_t new_size;
+
+        while (rval == ENOSPC) {
+            new_size = self->buffer_length * 2;
+            self->buffer = (char*)avro_realloc(self->buffer, self->buffer_length, new_size);
+            if (!self->buffer) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+            self->buffer_length = new_size;
+            avro_writer_memory_set_dest(self->writer, self->buffer, self->buffer_length);
+            rval = avro_value_write(self->writer, &resolved);
+        }
+
+        if (rval) {
+            avro_value_decref(&resolved);
+            avro_value_decref(&reader_value);
+            return NULL;
+        }
+        PyObject* s = PyBytes_FromStringAndSize(self->buffer, avro_writer_tell(self->writer));
+        avro_writer_reset(self->writer);
+        avro_value_decref(&resolved);
+        avro_value_decref(&reader_value);
+        return s;
+    }
+    rval = python_to_avro(obj, &reader_value);
     if (rval == 0) {
-        rval = avro_value_write(self->writer, &value);
+        rval = avro_value_write(self->writer, &reader_value);
     }
     size_t new_size;
 
@@ -186,16 +317,16 @@ static PyObject* Encoder_write(Encoder* self, PyObject* args) {
         }
         self->buffer_length = new_size;
         avro_writer_memory_set_dest(self->writer, self->buffer, self->buffer_length);
-        rval = avro_value_write(self->writer, &value);
+        rval = avro_value_write(self->writer, &reader_value);
     }
 
     if (rval) {
-        avro_value_decref(&value);
+        avro_value_decref(&reader_value);
         return NULL;
     }
     PyObject* s = PyBytes_FromStringAndSize(self->buffer, avro_writer_tell(self->writer));
     avro_writer_reset(self->writer);
-    avro_value_decref(&value);
+    avro_value_decref(&reader_value);
     return s;
 }
 
@@ -223,7 +354,7 @@ static PyMethodDef Encoder_methods[] = {
     {"read", (PyCFunction)Encoder_read, METH_VARARGS, ""},
     {"read_long", (PyCFunction)Encoder_read_long, METH_VARARGS, ""},
     {"read_record", (PyCFunction)Encoder_read_record, METH_VARARGS, ""},
-    {"set_schema", (PyCFunction)Encoder_set_schema, METH_VARARGS, ""},
+    {"set_schema", (PyCFunction)Encoder_set_schema, METH_VARARGS|METH_KEYWORDS, ""},
     {"write", (PyCFunction)Encoder_write, METH_VARARGS, ""},
     {"write_long", (PyCFunction)Encoder_write_long, METH_VARARGS, ""},
     {NULL}  /* Sentinel */

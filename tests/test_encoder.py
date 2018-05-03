@@ -214,3 +214,55 @@ class TestEncoderOther(object):
                 }
                 result = encoder.write({"age": 8011.125})
                 assert result == b"\x08test"
+
+    def test_resolved_writer_skip_fields(self):
+        with quickavro.BinaryEncoder() as encoder:
+            encoder.schema = {
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "name", "type": "string" },
+                    {"name": "age",  "type": ["float", "null"]}
+                ]
+            }
+            encoder.reader_schema = {
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "age",  "type": ["float", "null"]}
+                ]
+            }
+            result, record_size = encoder.read_record(b"\nLarry\x00\x00Y\xfaE")
+            assert result == {'age': 8011.125}
+
+            encoder.reader_schema = {
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "name", "type": "string" },
+                ]
+            }
+            result = encoder.read(b"\nLarry\x00\x00Y\xfaE")
+            assert result[0] == {'name': 'Larry'}
+
+    def test_resolved_reader_promote_float(self):
+        with quickavro.BinaryEncoder() as encoder:
+            encoder.schema = {
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "name", "type": "string" },
+                    {"name": "age",  "type": ["float", "null"]}
+                ]
+            }
+            encoder.reader_schema = {
+                "type": "record",
+                "name": "test",
+                "fields": [
+                    {"name": "name", "type": "string" },
+                    {"name": "age",  "type": ["double", "null"]}
+                ]
+            }
+            result = encoder.write({"name": "Larry", "age": 8011.125})
+
+            assert result == b"\nLarry\x00\x00\x00\x00\x00 K\xbf@"

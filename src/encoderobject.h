@@ -31,8 +31,11 @@ extern PyObject *WriteError;
 
 typedef struct {
     PyObject_HEAD
-    avro_schema_t       schema;
-    avro_value_iface_t* iface;
+    avro_value_iface_t* reader_iface;
+    avro_schema_t       reader_schema;
+    avro_value_iface_t* writer_iface;
+    avro_schema_t       writer_schema;
+    avro_value_iface_t* resolver;
     avro_reader_t       reader;
     avro_writer_t       writer;
 

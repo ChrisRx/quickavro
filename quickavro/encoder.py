@@ -32,7 +32,7 @@ def write_header(schema, sync_marker, codec="null"):
     :param sync_marker: str used to verify blocks.
     :param codec: (optional) Compression codec.
     """
-    with BinaryEncoder(HEADER_SCHEMA, codec) as encoder:
+    with BinaryEncoder(HEADER_SCHEMA, codec=codec) as encoder:
         header = {
             "magic": MAGIC,
             "meta": {
@@ -43,6 +43,7 @@ def write_header(schema, sync_marker, codec="null"):
         }
         return encoder.write(header)
 
+# class ResolvedWriter(BinaryEncoder):
 
 class BinaryEncoder(Encoder):
     """
@@ -74,14 +75,17 @@ class BinaryEncoder(Encoder):
                     f.write(block)
     """
 
-    def __init__(self, schema=None, codec="null"):
+    def __init__(self, schema=None, reader_schema=None, codec="null"):
         super(BinaryEncoder, self).__init__()
         self._codec = None
         self._schema = None
+        self._reader_schema = None
         self.sync_marker = os.urandom(SYNC_SIZE)
         self.codec = codec
         if schema:
             self.schema = schema
+            if reader_schema is not None:
+                self.reader_schema = reader_schema
         self.block = []
         self.block_count = 0
         self.block_size = 0
@@ -131,6 +135,16 @@ class BinaryEncoder(Encoder):
         return header, data
 
     @property
+    def reader_schema(self):
+        return self._reader_schema
+
+    @reader_schema.setter
+    def reader_schema(self, schema):
+        self._reader_schema = schema
+        if self._schema:
+            self.set_schema(json.dumps(self._schema), reader_schema=json.dumps(self._reader_schema))
+
+    @property
     def schema(self):
         if not self._schema:
             raise SchemaNotFound("Schema must be provided before attempting to read Avro data.")
@@ -139,7 +153,10 @@ class BinaryEncoder(Encoder):
     @schema.setter
     def schema(self, schema):
         self._schema = schema
-        self.set_schema(json.dumps(schema))
+        if self._reader_schema:
+            self.set_schema(json.dumps(self._schema), reader_schema=json.dumps(self._reader_schema))
+            return
+        self.set_schema(json.dumps(self._schema))
 
     def write_block(self):
         data = b"".join(self.block)
