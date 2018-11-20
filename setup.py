@@ -6,6 +6,7 @@ import re
 import tarfile
 
 import pip
+from pip._internal import main
 from setuptools import setup, Extension, find_packages
 from distutils.ccompiler import new_compiler
 from distutils.command.build_ext import build_ext
@@ -25,7 +26,7 @@ def touch(fname, times=None):
         os.utime(fname, times)
 
 def pip_install(package):
-    pip.main(['install', package])
+    main(['install', package])
 
 def download_file(url, path):
     try:
