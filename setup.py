@@ -5,7 +5,7 @@ import sys
 import re
 import tarfile
 
-from pip._internal import main
+# from pip._internal import main
 from setuptools import setup, Extension, find_packages
 from distutils.ccompiler import new_compiler
 from distutils.command.build_ext import build_ext
@@ -17,6 +17,16 @@ STATIC_LIB_NAME = "quickavro"
 STATIC_LIB = "{0}/lib{1}.a".format(STATIC_BUILD_DIR, STATIC_LIB_NAME)
 
 
+def import_or_install(package):
+    try:
+        __import__(package)
+    except:
+        import sys
+        import subprocess
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
+        __import__(package)
+
+
 class BuildFailed(Exception): pass
 
 
@@ -24,14 +34,14 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
-def pip_install(package):
-    main(['install', package])
+# def pip_install(package):
+#     main(['install', package])
 
 def download_file(url, path):
     try:
         import requests
     except ImportError:
-        pip_install('requests')
+        import_or_install('requests')
         try:
             import requests
         except ImportError:
