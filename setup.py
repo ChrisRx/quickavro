@@ -360,8 +360,8 @@ if __name__ == '__main__':
         ]
     )
 
-    if not exists("vendor/avro"):
-        download_source_files()
+    # if not exists("vendor/avro"):
+    #     download_source_files()
     if not exists(STATIC_LIB):
         sys.stderr.write("Compiling vendor static library ...\n")
         compile_vendor_static(STATIC_BUILD_DIR, STATIC_LIB_NAME)

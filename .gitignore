@@ -65,7 +65,7 @@ target/
 .ipynb_checkpoints
 
 # vendor packages
-vendor/*
+#vendor/*
 !vendor/Makefile
 
 # Data files
