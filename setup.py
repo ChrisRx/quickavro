@@ -308,11 +308,6 @@ def exists(path):
         return False
 
 if __name__ == '__main__':
-    if not exists("vendor/avro"):
-        download_source_files()
-    if not exists(STATIC_LIB):
-        sys.stderr.write("Compiling vendor static library ...\n")
-        compile_vendor_static(STATIC_BUILD_DIR, STATIC_LIB_NAME)
     setup(
         name="quickavro",
         version=get_version(),
@@ -334,6 +329,7 @@ if __name__ == '__main__':
         zip_safe=False,
         package_dir={'quickavro': 'quickavro'},
         install_requires=[
+            "requests"
         ],
         extras_require={
         },
@@ -363,3 +359,9 @@ if __name__ == '__main__':
             'Topic :: Utilities'
         ]
     )
+
+    if not exists("vendor/avro"):
+        download_source_files()
+    if not exists(STATIC_LIB):
+        sys.stderr.write("Compiling vendor static library ...\n")
+        compile_vendor_static(STATIC_BUILD_DIR, STATIC_LIB_NAME)
